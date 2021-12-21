@@ -7,7 +7,7 @@
 let inherit (plutus-apps) pkgs;
 in pkgs.haskell-nix.cabalProject rec {
   src = pkgs.haskell-nix.haskellLib.cleanGit {
-    name = "liquidity-bridge";
+    name = "shrinker";
     src = ./..;
   };
 

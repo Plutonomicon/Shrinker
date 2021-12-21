@@ -21,10 +21,10 @@ usage:
 	@echo "  pab_db              -- Generate pab db"
 	@echo "  clean_db            -- Delete pab db"
 	@echo "  build               -- Run cabal v2-build"
-	@echo "  watch               -- Track files: liquidity-bridge.cabal, src/* and run 'make build' on change"
+	@echo "  watch               -- Track files: shrinker.cabal, src/* and run 'make build' on change"
 	@echo "  test                -- Run cabal v2-test"
 	@echo "  accept_pirs         -- Accept new PIR changes"
-	@echo "  ghci                -- Run cabal v2-repl liquidity-bridge"
+	@echo "  ghci                -- Run cabal v2-repl shrinker"
 	@echo "  format              -- Apply source code formatting with fourmolu"
 	@echo "  format_check        -- Check source code formatting without making changes"
 	@echo "  nixfmt              -- Apply nix formatting with nixfmt"
@@ -83,7 +83,7 @@ build: requires_nix_shell
 	cabal v2-build $(GHC_FLAGS)
 
 watch: requires_nix_shell
-	while sleep 1; do find src liquidity-bridge.cabal | entr -cd make build; done
+	while sleep 1; do find src shrinker.cabal | entr -cd make build; done
 
 test: requires_nix_shell
 	cabal v2-test
@@ -92,7 +92,7 @@ accept_pirs: requires_nix_shell
 	stack build --test $(STACK_FLAGS) $(GHC_FLAGS) --ta '-p MarketAction --accept'
 
 ghci: requires_nix_shell
-	cabal v2-repl $(GHC_FLAGS) liquidity-bridge
+	cabal v2-repl $(GHC_FLAGS) shrinker
 
 
 # Source dirs to run fourmolu on
@@ -153,7 +153,7 @@ update_plutus:
 ################################################################################
 # Utils
 
-build_path = dist-newstyle/build/x86_64-linux/ghc-8.10.4.20210212/liquidity-bridge-0.1
+build_path = dist-newstyle/build/x86_64-linux/ghc-8.10.4.20210212/shrinker-0.1
 clear_build:
 	@[ ! -e $(build_path) ] || rm -rf $(build_path)
 

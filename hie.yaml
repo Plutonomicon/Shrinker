@@ -1,7 +1,7 @@
 cradle:
   cabal:
     - path: "./src"
-      component: "lib:liquidity-bridge"
+      component: "lib:shrinker"
 
     - path: "./test"
-      component: "test:liquidity-bridge"
+      component: "test:shrinker"

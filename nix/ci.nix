@@ -12,13 +12,13 @@ in rec {
   # What should CI build?
 
   inherit (project) projectCoverageReport;
-  inherit (project.liquidity-bridge.components) library;
+  inherit (project.shrinker.components) library;
 
-  inherit (project.liquidity-bridge.components.tests) liquidity-bridge-test;
+  inherit (project.shrinker.components.tests) shrinker-test;
 
   # This will run the tests within this build and produce the test logs to stdout
   check = plutus-apps.pkgs.runCommand "run-tests" { } ''
-    ${liquidity-bridge-test}/bin/liquidity-bridge-test
+    ${shrinker-test}/bin/shrinker-test
     echo "" > $out
   '';
 

@@ -14,5 +14,5 @@ main = defaultMain tests
 tests :: TestTree
 tests =
   testGroup
-    "LiquidityBridge"
+    "Shrink"
     []
