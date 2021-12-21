@@ -1,0 +1,7 @@
+cradle:
+  cabal:
+    - path: "./src"
+      component: "lib:liquidity-bridge"
+
+    - path: "./test"
+      component: "test:liquidity-bridge"
