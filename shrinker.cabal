@@ -35,7 +35,6 @@ common common-lang
     , record-hasfield
 
   default-extensions:
-    NoImplicitPrelude
     BangPatterns
     BinaryLiterals
     ConstraintKinds
@@ -84,6 +83,7 @@ library
     , freer-extras
     , freer-simple
     , lens
+    , mtl
     , playground-common
     , plutus-contract
     , plutus-core

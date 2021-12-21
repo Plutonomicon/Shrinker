@@ -18,6 +18,7 @@ with import ./nix { };
       playground-common
       prettyprinter-configurable
       plutus-use-cases
+			cabal-doctest
     ];
 
   withHoogle = true;
