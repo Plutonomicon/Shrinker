@@ -74,6 +74,15 @@ library
   import:          common-lang
   exposed-modules:
     Shrink
+    Shrink.PlutusTX
+    Shrink.PlutusTXTH
+  other-modules:
+    Shrink.Types
+    Shrink.Names
+    Shrink.ScopeM
+    Shrink.Tactics.Safe
+    Shrink.Tactics.Tactics
+    Shrink.Tactics.Util
   build-depends:
     , aeson               ^>=1.5.0.0
     , bytestring          ^>=0.10.12.0
@@ -97,6 +106,7 @@ library
     , serialise
     , servant
     , servant-server
+    , template-haskell
     , text                ^>=1.2.4.0
     , vector              ^>=0.12.1.2
     , wai
