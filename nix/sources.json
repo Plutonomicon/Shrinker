@@ -217,6 +217,18 @@
         "url": "https://github.com/input-output-hk/ouroboros-network/archive/1f4973f36f689d6da75b5d351fb124d66ef1057d.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
+    "pluto": {
+        "branch": "main",
+        "description": "An untyped Plutus Core assembler",
+        "homepage": null,
+        "owner": "Plutonomicon",
+        "repo": "pluto",
+        "rev": "aab7447040b0fe2c8bb79b5b3e87c9d23ac41683",
+        "sha256": "h1OQiRv6lDgipUvIUtKdeGJv0z3wTztUBTFLg8jzOW8=",
+        "type": "tarball",
+        "url": "https://github.com/Plutonomicon/pluto/archive/aab7447040b0fe2c8bb79b5b3e87c9d23ac41683.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "plutus": {
         "branch": "master",
         "description": "The Plutus language implementation and tools",
