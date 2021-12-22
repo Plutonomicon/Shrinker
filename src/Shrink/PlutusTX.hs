@@ -4,7 +4,7 @@ module Shrink.PlutusTX (
 ) where
 
 import Shrink (defaultShrinkParams, shrinkScriptSp)
-import Shrink.Types
+import Shrink.Types (ShrinkParams)
 
 import Codec.Serialise (serialise)
 import Data.ByteString.Lazy (toStrict)

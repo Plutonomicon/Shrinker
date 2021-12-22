@@ -1,16 +1,24 @@
-module Tactics where
+module Tactics (
+  shrinkingTactics,
+  testTacticOn,
+  run,
+  Similar ((~=)),
+) where
 
 import Shrink (defaultShrinkParams, size)
 import Shrink.Names (dTermToN)
-import Shrink.Types
+import Shrink.Types (NTerm, SafeTactic, Tactic, safeTactics, tactics)
 
 import Hedgehog (MonadTest, annotate, assert, failure, forAll, property, success)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Hedgehog (testProperty)
 
 import PlutusCore.Default (DefaultFun, DefaultUni)
-import PlutusCore.Evaluation.Machine.ExBudget (ExBudget (..), ExRestrictingBudget (..))
-import PlutusCore.Evaluation.Machine.ExMemory (ExCPU (..), ExMemory (..))
+import PlutusCore.Evaluation.Machine.ExBudget (
+  ExBudget (ExBudget, exBudgetCPU, exBudgetMemory),
+  ExRestrictingBudget (ExRestrictingBudget, unExRestrictingBudget),
+ )
+import PlutusCore.Evaluation.Machine.ExMemory (ExCPU (), ExMemory ())
 import PlutusCore.Name (Name)
 import UntypedPlutusCore.Evaluation.Machine.Cek (CekEvaluationException, RestrictingSt (RestrictingSt), restricting, runCekNoEmit)
 
@@ -121,7 +129,7 @@ prettyPrintTerm =
    in \case
         UPLC.Var () name -> showName name
         UPLC.LamAbs () name term -> "(\\" ++ showName name ++ "->" ++ prettyPrintTerm term ++ ")"
-        UPLC.Apply () f@UPLC.LamAbs{} x -> prettyPrintTerm f ++ " (" ++ prettyPrintTerm x ++ ")"
+        UPLC.Apply () f@UPLC.LamAbs {} x -> prettyPrintTerm f ++ " (" ++ prettyPrintTerm x ++ ")"
         UPLC.Apply () f x -> "(" ++ prettyPrintTerm f ++ ") (" ++ prettyPrintTerm x ++ ")"
         UPLC.Force () term -> "!(" ++ prettyPrintTerm term ++ ")"
         UPLC.Delay () term -> "#(" ++ prettyPrintTerm term ++ ")"

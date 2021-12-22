@@ -2,10 +2,10 @@ module Shrink.Tactics.Safe (
   safeTactList,
 ) where
 
-import Shrink.Tactics.Util
-import Shrink.Types
+import Shrink.Tactics.Util (completeRec, mentions, subName', whnf)
+import Shrink.Types (SafeTactic, WhnfRes (Err, Success, Unclear))
 
-import PlutusCore.Default (DefaultFun (..))
+import PlutusCore.Default (DefaultFun (FstPair, MkPairData, SndPair))
 import UntypedPlutusCore.Core.Type (Term (Apply, Builtin, Error, LamAbs, Var))
 
 safeTactList :: [(String, SafeTactic)]

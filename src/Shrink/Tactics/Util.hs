@@ -1,24 +1,41 @@
-module Shrink.Tactics.Util where
+module Shrink.Tactics.Util (
+  completeTactic,
+  applyArgs,
+  reconsile,
+  findHoles,
+  withTemplate,
+  makeLambs,
+  sepMaybe,
+  uses,
+  weakEquiv,
+  mentions,
+  equiv,
+  subTerms,
+  unsub,
+  whnf,
+  subName',
+  completeRec,
+  appBind,
+) where
 
-import Shrink.ScopeM
-import Shrink.Types
+import Shrink.ScopeM (newName, runScopedTact)
+import Shrink.Types (MonadScope, NTerm, PartialTactic, Scope, ScopeM, ScopeMT, ScopedTactic, Tactic, WhnfRes (Err, Success, Unclear))
 
 import Control.Arrow (first, second)
 import Control.Monad (guard, join, liftM2)
 import Control.Monad.Reader (MonadReader, ask, local, runReaderT)
-import Control.Monad.State (get, modify, put, runStateT)
+import Control.Monad.State (get, put, runStateT)
 import Data.Functor ((<&>))
 import Data.Functor.Identity (Identity (Identity), runIdentity)
 import Data.Map (Map)
 import Data.Maybe (fromMaybe)
-import Data.Text (pack)
-
-import PlutusCore.Default (DefaultFun (..))
-import UntypedPlutusCore (Name (Name), Unique (Unique))
+import PlutusCore.Default (DefaultFun)
+import UntypedPlutusCore (Name)
 import UntypedPlutusCore.Core.Type (Term (Apply, Builtin, Constant, Delay, Error, Force, LamAbs, Var))
 
 import Data.Map qualified as M
 import Data.Set qualified as S
+import PlutusCore.Default qualified as Default
 
 completeTactic :: PartialTactic -> Tactic
 completeTactic = runScopedTact . completeTactic'
@@ -114,27 +131,27 @@ whnf' n =
 
 safe2Arg :: DefaultFun -> Bool
 safe2Arg = \case
-  AddInteger -> True
-  SubtractInteger -> True
-  MultiplyInteger -> True
-  EqualsInteger -> True
-  LessThanInteger -> True
-  LessThanEqualsInteger -> True
-  AppendByteString -> True
-  ConsByteString -> True
-  IndexByteString -> True
-  EqualsByteString -> True
-  LessThanByteString -> True
-  LessThanEqualsByteString -> True
-  VerifySignature -> True
-  AppendString -> True
-  EqualsString -> True
-  ChooseUnit -> True
-  Trace -> True
-  MkCons -> True
-  ConstrData -> True
-  EqualsData -> True
-  MkPairData -> True
+  Default.AddInteger -> True
+  Default.SubtractInteger -> True
+  Default.MultiplyInteger -> True
+  Default.EqualsInteger -> True
+  Default.LessThanInteger -> True
+  Default.LessThanEqualsInteger -> True
+  Default.AppendByteString -> True
+  Default.ConsByteString -> True
+  Default.IndexByteString -> True
+  Default.EqualsByteString -> True
+  Default.LessThanByteString -> True
+  Default.LessThanEqualsByteString -> True
+  Default.VerifySignature -> True
+  Default.AppendString -> True
+  Default.EqualsString -> True
+  Default.ChooseUnit -> True
+  Default.Trace -> True
+  Default.MkCons -> True
+  Default.ConstrData -> True
+  Default.EqualsData -> True
+  Default.MkPairData -> True
   _ -> False
 
 subTerms :: NTerm -> [(Scope, NTerm)]
@@ -217,12 +234,6 @@ uses s = \case
   LamAbs _ n t -> n `S.notMember` s && uses s t
   Var _ n -> n `S.member` s
   _ -> False
-
-newName :: MonadScope m => m Name
-newName = do
-  n <- get
-  modify (+ 1)
-  return $ Name (pack $ show n) (Unique $ fromIntegral n)
 
 sepMaybe :: ScopeMT Maybe a -> ScopeM (Maybe a)
 sepMaybe smtma = do

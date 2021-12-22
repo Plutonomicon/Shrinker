@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Test.Tasty
+import Test.Tasty (defaultMain, testGroup)
 
 import Tactics (shrinkingTactics)
 import UnitTests (makeUnitTests)

@@ -9,10 +9,11 @@ import Hedgehog (Gen)
 import Hedgehog.Gen (ascii, bytes, choice, integral, list, text)
 import Hedgehog.Range (linear)
 import PlutusCore.Data (Data (B, Constr, I, List, Map))
-import PlutusCore.DeBruijn (DeBruijn (..), Index (..))
-import PlutusCore.Default (DefaultFun (..), DefaultUni, Some (Some), ValueOf (ValueOf))
+import PlutusCore.DeBruijn (DeBruijn (DeBruijn), Index (Index))
+import PlutusCore.Default (DefaultFun, DefaultUni, Some (Some), ValueOf (ValueOf))
 import UntypedPlutusCore.Core.Type (Term (Apply, Builtin, Constant, Delay, Error, Force, LamAbs, Var))
 
+import PlutusCore.Default qualified as Default
 import PlutusCore.Default qualified as PLC
 
 -- Passed to a generator, indicates the maximum recursion depth its children should have.
@@ -89,55 +90,55 @@ genUplcBuiltin :: Gen DefaultFun
 genUplcBuiltin =
   choice $
     return
-      <$> [ AddInteger
-          , SubtractInteger
-          , MultiplyInteger
-          , DivideInteger
-          , QuotientInteger
-          , RemainderInteger
-          , ModInteger
-          , EqualsInteger
-          , LessThanInteger
-          , LessThanEqualsInteger
-          , AppendByteString
-          , ConsByteString
-          , SliceByteString
-          , LengthOfByteString
-          , IndexByteString
-          , EqualsByteString
-          , LessThanByteString
-          , LessThanEqualsByteString
-          , Sha2_256
-          , Sha3_256
-          , Blake2b_256
-          , VerifySignature
-          , AppendString
-          , EqualsString
-          , EncodeUtf8
-          , DecodeUtf8
-          , IfThenElse
-          , ChooseUnit
-          , Trace
-          , FstPair
-          , SndPair
-          , ChooseList
-          , MkCons
-          , HeadList
-          , TailList
-          , NullList
-          , ChooseData
-          , ConstrData
-          , MapData
-          , ListData
-          , IData
-          , BData
-          , UnConstrData
-          , UnMapData
-          , UnListData
-          , UnIData
-          , UnBData
-          , EqualsData
-          , MkPairData
-          , MkNilData
-          , MkNilPairData
+      <$> [ Default.AddInteger
+          , Default.SubtractInteger
+          , Default.MultiplyInteger
+          , Default.DivideInteger
+          , Default.QuotientInteger
+          , Default.RemainderInteger
+          , Default.ModInteger
+          , Default.EqualsInteger
+          , Default.LessThanInteger
+          , Default.LessThanEqualsInteger
+          , Default.AppendByteString
+          , Default.ConsByteString
+          , Default.SliceByteString
+          , Default.LengthOfByteString
+          , Default.IndexByteString
+          , Default.EqualsByteString
+          , Default.LessThanByteString
+          , Default.LessThanEqualsByteString
+          , Default.Sha2_256
+          , Default.Sha3_256
+          , Default.Blake2b_256
+          , Default.VerifySignature
+          , Default.AppendString
+          , Default.EqualsString
+          , Default.EncodeUtf8
+          , Default.DecodeUtf8
+          , Default.IfThenElse
+          , Default.ChooseUnit
+          , Default.Trace
+          , Default.FstPair
+          , Default.SndPair
+          , Default.ChooseList
+          , Default.MkCons
+          , Default.HeadList
+          , Default.TailList
+          , Default.NullList
+          , Default.ChooseData
+          , Default.ConstrData
+          , Default.MapData
+          , Default.ListData
+          , Default.IData
+          , Default.BData
+          , Default.UnConstrData
+          , Default.UnMapData
+          , Default.UnListData
+          , Default.UnIData
+          , Default.UnBData
+          , Default.EqualsData
+          , Default.MkPairData
+          , Default.MkNilData
+          , Default.MkNilPairData
           ]

@@ -2,7 +2,7 @@
 
 module Shrink.PlutusTXTH (shrinkCompiledTH) where
 
-import Language.Haskell.TH
+import Language.Haskell.TH (Q, TExp)
 import PlutusTx.Code (CompiledCode)
 import Shrink.PlutusTX (shrinkCompiled)
 

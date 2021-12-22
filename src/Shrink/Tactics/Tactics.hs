@@ -2,13 +2,13 @@ module Shrink.Tactics.Tactics (
   tactList,
 ) where
 
-import Shrink.ScopeM (liftScope)
-import Shrink.Tactics.Util
-import Shrink.Types
+import Shrink.ScopeM (liftScope, newName)
+import Shrink.Tactics.Util (appBind, completeTactic, equiv, makeLambs, sepMaybe, subTerms, unsub, weakEquiv, whnf, withTemplate)
+import Shrink.Types (Tactic, WhnfRes (Err, Success, Unclear))
 
 import Control.Monad (guard)
 
-import PlutusCore.Default (DefaultFun (..))
+import PlutusCore.Default (DefaultFun (MkPairData))
 import UntypedPlutusCore.Core.Type (Term (Apply, Builtin, Error, LamAbs, Var))
 
 tactList :: [(String, Tactic)]

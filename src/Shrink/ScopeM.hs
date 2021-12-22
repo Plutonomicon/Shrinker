@@ -3,17 +3,19 @@ module Shrink.ScopeM (
   runScopeM,
   runScopedTact,
   liftScope,
+  newName,
 ) where
 
-import Shrink.Types
+import Shrink.Types (MonadScope, NTerm, Scope, ScopeM, ScopeMT)
 
 import Data.Set qualified as S
 
 import Control.Monad.Reader (ask, runReaderT)
-import Control.Monad.State (evalStateT, get, put, runState)
+import Control.Monad.State (evalStateT, get, modify, put, runState)
 import Data.Functor.Identity (runIdentity)
+import Data.Text (pack)
 
-import UntypedPlutusCore (Name (nameUnique), Unique (unUnique))
+import UntypedPlutusCore (Name (Name, nameUnique), Unique (Unique, unUnique))
 import UntypedPlutusCore.Core.Type (Term (Apply, Delay, Force, LamAbs, Var))
 
 runScopeMT :: Monad m => NTerm -> ScopeMT m a -> m a
@@ -44,3 +46,9 @@ liftScope sma = do
 
 runScopedTact :: (NTerm -> ScopeM a) -> NTerm -> a
 runScopedTact f nt = runScopeM nt (f nt)
+
+newName :: MonadScope m => m Name
+newName = do
+  n <- get
+  modify (+ 1)
+  return $ Name (pack $ show n) (Unique $ fromIntegral n)

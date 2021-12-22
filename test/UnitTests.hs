@@ -1,10 +1,10 @@
-module UnitTests where
+module UnitTests (makeUnitTests) where
 
-import Tactics
+import Tactics (Similar ((~=)), run, testTacticOn)
 
-import Shrink
-import Shrink.Names
-import Shrink.Types
+import Shrink (defaultShrinkParams, shrinkDTerm)
+import Shrink.Names (dTermToN)
+import Shrink.Types (DTerm, NTerm, Tactic, safeTactics, tactics)
 
 import Control.Arrow (second)
 import Control.Monad (filterM, when, (>=>))
@@ -19,7 +19,7 @@ import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Hedgehog (testProperty)
 import UntypedPlutusCore.Core.Type (Program (Program))
 
-import Plutus.V1.Ledger.Scripts (Script (..))
+import Plutus.V1.Ledger.Scripts (Script (Script))
 import PlutusCore.Assembler.AnnDeBruijn (annDeBruijn)
 import PlutusCore.Assembler.Assemble (parseProgram)
 import PlutusCore.Assembler.Desugar (desugar)
