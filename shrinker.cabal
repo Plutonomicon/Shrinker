@@ -2,7 +2,7 @@ cabal-version:      3.0
 name:               shrinker
 version:            0.1
 synopsis:           TODO
-description:        TODO
+description:        Tools for optimizing uplc script sizes
 homepage:           https://github.com/Geometer1729/Shrinker
 bug-reports:        https://github.com/Geometer1729/Shrinker
 license:
