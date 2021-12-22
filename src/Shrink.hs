@@ -3,6 +3,8 @@ module Shrink
   ,shrinkScriptSp
   ,withoutTactics
   ,defaultShrinkParams
+  --testing exports
+  ,size
   ) where
 
 import Shrink.Types
@@ -52,6 +54,7 @@ stepShrink sp terms = let
   sizedCands = [(size c,c) | c <- cands' ]
   batches = groupBy ((==) `on` fst) . sortOn fst $ sizedCands
   uniques = concat $ fmap head . group . sortOn (show . snd) <$> batches
+    -- TODO: possible performancce improvement right own compare instead of show
   in take (fromIntegral $ parallelTerms sp) (snd <$> uniques)
 
 size :: NTerm -> Integer

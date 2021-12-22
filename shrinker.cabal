@@ -8,7 +8,7 @@ bug-reports:        https://github.com/Geometer1729/Shrinker
 license:
 license-file:
 author:             MLabs
-maintainer:         TODO
+maintainer:         brian@mlabs.city
 copyright:          TODO
 category:           TODO
 build-type:         Simple
@@ -70,18 +70,18 @@ common common-lang
 
 -- Libraries
 
-library
+library 
   import:          common-lang
   exposed-modules:
     Shrink
     Shrink.PlutusTX
     Shrink.PlutusTXTH
-  other-modules:
     Shrink.Types
     Shrink.Names
-    Shrink.ScopeM
     Shrink.Tactics.Safe
     Shrink.Tactics.Tactics
+  other-modules:
+    Shrink.ScopeM
     Shrink.Tactics.Util
   build-depends:
     , aeson               ^>=1.5.0.0
@@ -114,11 +114,15 @@ library
   hs-source-dirs:  src
 
 test-suite shrinker-test
-  import:         common-lang
+  import:         common-lang 
   type:           exitcode-stdio-1.0
   main-is:        Spec.hs
-  ghc-options:    -fplugin-opt PlutusTx.Plugin:defer-errors
+  other-modules:
+    Gen 
+    Tactics
+  --ghc-options:    -fplugin-opt PlutusTx.Plugin:defer-errors
   build-depends:
+    , shrinker
     , aeson                        ^>=1.5.0.0
     , base
     , base-compat
@@ -129,8 +133,8 @@ test-suite shrinker-test
     , either
     , freer-extras
     , freer-simple
+    , hedgehog
     , lens
-    , shrinker
     , playground-common
     , plutus-contract
     , plutus-core
@@ -147,6 +151,7 @@ test-suite shrinker-test
     , servant
     , servant-server
     , tasty
+    , tasty-hedgehog
     , tasty-quickcheck
     , text                         ^>=1.2.4.0
     , vector                       ^>=0.12.1.2
