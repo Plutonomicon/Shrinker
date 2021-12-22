@@ -63,7 +63,7 @@ jobs:
             substituters = https://hydra.iohk.io https://iohk.cachix.org https://cache.nixos.org/
       - uses: cachix/cachix-action@v10
         with:
-          name: mlabs
+          name: iohk
           authToken: '${{ secrets.CACHIXKEY }}'
       - name: Cache cabal folder
         id: cabal
