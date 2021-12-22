@@ -3,12 +3,12 @@ module Main (main) where
 import Test.Tasty
 
 import Tactics(shrinkingTactics)
+import UnitTests(makeUnitTests)
 
 main :: IO ()
-main = defaultMain tests
-
-tests :: TestTree
-tests =
-  testGroup
-    "Shrink"
-    [shrinkingTactics ]
+main = do
+  unitTests <- makeUnitTests
+  defaultMain $ testGroup "Shrinker"
+    [shrinkingTactics 
+    ,unitTests
+    ]

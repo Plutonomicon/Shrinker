@@ -4,6 +4,7 @@ module Shrink
   ,withoutTactics
   ,defaultShrinkParams
   --testing exports
+  ,shrinkDTerm
   ,size
   ) where
 
@@ -28,6 +29,9 @@ shrinkScriptSp sp (Script prog) = Script (shrinkProgramSp sp prog)
 
 shrinkProgramSp :: ShrinkParams -> DProgram -> DProgram
 shrinkProgramSp sp (Program _ version term) = Program () version (shrinkDTermSp sp term)
+
+shrinkDTerm :: DTerm -> DTerm
+shrinkDTerm = shrinkDTermSp defaultShrinkParams
 
 shrinkDTermSp :: ShrinkParams -> DTerm -> DTerm
 shrinkDTermSp sp = nTermToD . shrinkNTermSp sp . dTermToN

@@ -30,7 +30,8 @@ common common-lang
     -fno-omit-interface-pragmas -fplugin=RecordDotPreprocessor
 
   build-depends:
-    , base                     ^>=4.14
+    , base                   
+    -- >= 4.14.1
     , record-dot-preprocessor
     , record-hasfield
 
@@ -113,6 +114,7 @@ library
     , warp
   hs-source-dirs:  src
 
+
 test-suite shrinker-test
   import:         common-lang 
   type:           exitcode-stdio-1.0
@@ -120,6 +122,7 @@ test-suite shrinker-test
   other-modules:
     Gen 
     Tactics
+    UnitTests
   --ghc-options:    -fplugin-opt PlutusTx.Plugin:defer-errors
   build-depends:
     , shrinker
@@ -130,12 +133,15 @@ test-suite shrinker-test
     , cardano-prelude
     , containers
     , data-default-class
+    , directory
     , either
+    , filepath
     , freer-extras
     , freer-simple
     , hedgehog
     , lens
     , playground-common
+    , pluto
     , plutus-contract
     , plutus-core
     , plutus-ledger
@@ -159,3 +165,5 @@ test-suite shrinker-test
     , warp
 
   hs-source-dirs: test
+
+

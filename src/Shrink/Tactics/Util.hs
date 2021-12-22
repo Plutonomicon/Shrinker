@@ -88,10 +88,10 @@ whnf' 0 = const Unclear
 whnf' n = let
   rec = whnf' (n-1)
     in \case
-  Var{} -> Safe
+  Var{} -> Success
   -- While Vars can be bound to error
   -- that lambda will throw an error first so this is safe
-  LamAbs{} -> Safe
+  LamAbs{} -> Success
   Apply _ (LamAbs _ name lTerm) valTerm ->
     case rec valTerm of
       Err -> Err
@@ -105,9 +105,9 @@ whnf' n = let
     -- ie. a case over builtins
   Force _ (Delay _ term) -> rec term
   Force{} -> Unclear
-  Delay{} -> Safe
-  Constant{} -> Safe
-  Builtin{} -> Safe
+  Delay{} -> Success
+  Constant{} -> Success
+  Builtin{} -> Success
   Error{} -> Err
 
 safe2Arg :: DefaultFun -> Bool
@@ -190,8 +190,8 @@ weakEquiv' = curry $ \case
   (l,r)
     | l == r    -> return (l,1,[])
     | otherwise -> do
-        guard $ whnf l == Safe
-        guard $ whnf r == Safe
+        guard $ whnf l == Success
+        guard $ whnf r == Success
         holeName <- newName
         return (Var () holeName,1,[holeName])
 
@@ -239,7 +239,7 @@ withTemplate templateName (template,holes) = completeRecM $ \target -> do
   return $ do
     mapArgs <- margs
     let args = M.elems mapArgs
-    guard $ all (== Safe) (whnf <$> args)
+    guard $ all (== Success) (whnf <$> args)
     return $ applyArgs (Var () templateName) args
 
 findHoles :: [Name] -> NTerm -> NTerm -> ScopeM (Maybe (Map Name NTerm))

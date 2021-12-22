@@ -57,7 +57,7 @@ data ShrinkParams = ShrinkParams
 -- automatically add the name to the name of the
 -- property test
 
-data WhnfRes = Err | Unclear  | Safe deriving (Eq,Ord)
+data WhnfRes = Err | Unclear  | Success deriving (Eq,Ord)
 
 class (MonadReader (Scope,Scope) m,MonadState Integer m) => MonadScope m where
 

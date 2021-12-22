@@ -23,7 +23,7 @@ subs :: Tactic
 subs = completeTactic $ \case
       Apply _ (LamAbs _ name funTerm) varTerm ->
         case whnf varTerm of
-          Safe    -> return $ Just [appBind name varTerm funTerm]
+          Success -> return $ Just [appBind name varTerm funTerm]
           Unclear -> return Nothing
           Err     -> return $ Just [Error ()]
       _ -> return Nothing

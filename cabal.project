@@ -11,6 +11,15 @@ benchmarks: true
 
 source-repository-package
   type: git
+  location: https://github.com/Plutonomicon/pluto.git
+  tag: aab7447040b0fe2c8bb79b5b3e87c9d23ac41683
+    -- old commit because the next commit requires conflicting base
+    -- the conflicting base version is only required by an executable 
+    -- which I don't need so this feels fixable but I'm stumped
+    -- it may also be fixed by removing unused imports here
+
+source-repository-package
+  type: git
   location: https://github.com/input-output-hk/plutus.git
   subdir:
     plutus-core
