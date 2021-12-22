@@ -1,12 +1,12 @@
 { sourcesFile ? ./sources.json, system ? builtins.currentSystem
 , sources ? import ./sources.nix { inherit system sourcesFile; }
 , plutus ? import sources.plutus { }
-, plutus-apps ? import sources.plutus-apps { }
-, deferPluginErrors ? true
+, plutus-apps ? import sources.plutus-apps { }, deferPluginErrors ? true
 , doCoverage ? false }:
 let
   project = import ./haskell.nix {
-    inherit sourcesFile system sources plutus plutus-apps deferPluginErrors doCoverage;
+    inherit sourcesFile system sources plutus plutus-apps deferPluginErrors
+      doCoverage;
   };
 in rec {
   # What should CI build?

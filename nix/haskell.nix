@@ -1,8 +1,7 @@
 { sourcesFile ? ./sources.json, system ? builtins.currentSystem
 , sources ? import ./sources.nix { inherit system sourcesFile; }
 , plutus ? import sources.plutus { }
-, plutus-apps ? import sources.plutus-apps { }
-, deferPluginErrors ? true
+, plutus-apps ? import sources.plutus-apps { }, deferPluginErrors ? true
 , doCoverage ? false }:
 let inherit (plutus-apps) pkgs;
 in pkgs.haskell-nix.cabalProject rec {
@@ -39,9 +38,10 @@ in pkgs.haskell-nix.cabalProject rec {
   # Using this allows us to leave these nix-specific hashes _out_ of cabal.project
   # Normally, they'd be placed under the `source-repository-package` section as a comment like so:
   # `--sha256: ...`
-  sha256map = pkgs.lib.foldr (data: tab: with data; tab // {
+  sha256map = pkgs.lib.foldr (data: tab:
+    with data;
+    tab // {
       "https://github.com/${owner}/${repo}"."${rev}" = sha256;
       "https://github.com/${owner}/${repo}.git"."${rev}" = sha256;
-    }
-  ) {} (pkgs.lib.attrValues sources);
+    }) { } (pkgs.lib.attrValues sources);
 }

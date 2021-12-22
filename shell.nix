@@ -18,36 +18,35 @@ with import ./nix { };
       playground-common
       prettyprinter-configurable
       plutus-use-cases
-			cabal-doctest
+      cabal-doctest
     ];
 
   withHoogle = true;
 
   # Extra haskell tools (arg passed on to mkDerivation)
   # Using the plutus.pkgs to use nixpkgs version from plutus (nixpkgs-unstable, mostly)
-  propagatedBuildInputs = with pkgs;
-    [
-      # Haskell Tools
-      stack
-      cabal-install
-      haskellPackages.fourmolu
-      entr
-      git
-      ghc
-      nixfmt
-      plutus.plutus.hlint
+  propagatedBuildInputs = with pkgs; [
+    # Haskell Tools
+    stack
+    cabal-install
+    haskellPackages.fourmolu
+    entr
+    git
+    ghc
+    nixfmt
+    plutus.plutus.hlint
 
-      plutus.plutus.haskell-language-server
+    plutus.plutus.haskell-language-server
 
-      # hls doesn't support preprocessors yet so this has to exist in PATH
-      haskellPackages.record-dot-preprocessor
+    # hls doesn't support preprocessors yet so this has to exist in PATH
+    haskellPackages.record-dot-preprocessor
 
-      # Graphviz Diagrams for documentation
-      graphviz
+    # Graphviz Diagrams for documentation
+    graphviz
 
-      ### Example contracts
-      plutus-apps.plutus-pab-examples
-    ];
+    ### Example contracts
+    plutus-apps.plutus-pab-examples
+  ];
 
   buildInputs = (with plutus-apps.pkgs;
     [ zlib pkg-config libsodium-vrf R ]
