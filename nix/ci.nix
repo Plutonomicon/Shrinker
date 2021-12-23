@@ -18,7 +18,8 @@ in rec {
 
   # This will run the tests within this build and produce the test logs to stdout
   check = plutus-apps.pkgs.runCommand "run-tests" { } ''
-    ${shrinker-test}/bin/shrinker-test
+		export LANG=en_US-UTF.8
+    ${shrinker-test}/bin/shrinker-test --quiet --color=never 
     echo "" > $out
   '';
 

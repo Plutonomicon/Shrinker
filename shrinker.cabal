@@ -15,7 +15,8 @@ build-type:         Simple
 tested-with:        GHC ==8.10.4
 extra-source-files: 
   README.md
-  unitTests
+data-files:
+  ./unitTests/*.pluto
 
 source-repository head
   type:     git
@@ -126,6 +127,7 @@ test-suite shrinker-test
     Gen 
     Tactics
     UnitTests
+    Paths_shrinker
   build-depends:
     , shrinker
     , aeson                        ^>=1.5.0.0

@@ -1,5 +1,7 @@
 module UnitTests (makeUnitTests) where
 
+import Paths_shrinker (getDataFileName)
+
 import Tactics (Similar ((~=)), run, testTacticOn)
 
 import Shrink (defaultShrinkParams, shrinkDTerm)
@@ -28,7 +30,8 @@ data TacticType = Safe | Unsafe deriving (Show)
 
 makeUnitTests :: IO TestTree
 makeUnitTests = do
-  unitTests <- filterM doesFileExist . fmap ("./unitTests" </>) =<< listDirectory "./unitTests"
+  unitTestDir <- getDataFileName "./unitTests"
+  unitTests <- filterM doesFileExist . fmap (unitTestDir </>) =<< listDirectory unitTestDir
   srcs <- mapM (fmap pack . readFile) unitTests
   let uplcs' =
         rights

@@ -6,6 +6,7 @@ on:
       - 'nix/sources.json'
       - 'shrinker.cabal'
       - './unitTests'
+      - './unitTests/*'
     branches:
       - master
       - staging
@@ -16,6 +17,7 @@ on:
       - 'nix/sources.json'
       - 'shrinker.cabal'
       - './unitTests'
+      - './unitTests/*'
 jobs:
   check-formatting:
     runs-on: ubuntu-latest
