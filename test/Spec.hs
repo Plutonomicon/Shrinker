@@ -6,11 +6,8 @@ import Test.Tasty.Hedgehog (HedgehogTestLimit (HedgehogTestLimit))
 import Tactics (shrinkingTactics)
 import UnitTests (makeUnitTests)
 
-import System.Environment (getEnv)
-
 main :: IO ()
 main = do
-  getEnv "LANG" >>= print
   unitTests <- makeUnitTests
   defaultMain $
     testGroup
