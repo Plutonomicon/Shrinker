@@ -60,7 +60,7 @@ genUplc' :: RecursionDepth -> Integer -> Gen UplcTerm
 genUplc' depth level =
   let next = genUplc' (depth -1) level
    in choice $
-        [ Constant () <$> genConstant depth
+        [ Constant () <$> genConstant (depth -1)
         , Builtin () <$> genUplcBuiltin
         , return $ Error ()
         ]
