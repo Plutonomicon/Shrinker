@@ -35,7 +35,6 @@ common common-lang
 
   build-depends:
     , base                   
-    -- >= 4.14.1
     , record-dot-preprocessor
     , record-hasfield
 
@@ -127,7 +126,6 @@ test-suite shrinker-test
     Gen 
     Tactics
     UnitTests
-  --ghc-options:    -fplugin-opt PlutusTx.Plugin:defer-errors
   build-depends:
     , shrinker
     , aeson                        ^>=1.5.0.0
