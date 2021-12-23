@@ -1,0 +1,46 @@
+ --94 ┃ testTactic :: String -> Tactic -> TestTree
+ --95 ┃ testTactic tactName tactic = testProperty "Tactic doesn't break code" . property $ do
+ --96 ┃   uplc <- forAll genUplc
+ --   ┃   │ Apply
+ --   ┃   │   ()
+ --   ┃   │   (LamAbs
+ --   ┃   │      ()
+ --   ┃   │      DeBruijn { dbnIndex = 0 }
+ --   ┃   │      (LamAbs
+ --   ┃   │         ()
+ --   ┃   │         DeBruijn { dbnIndex = 0 }
+ --   ┃   │         (LamAbs () DeBruijn { dbnIndex = 0 } (Error ()))))
+ --   ┃   │   (LamAbs
+ --   ┃   │      ()
+ --   ┃   │      DeBruijn { dbnIndex = 0 }
+ --   ┃   │      (LamAbs
+ --   ┃   │         ()
+ --   ┃   │         DeBruijn { dbnIndex = 0 }
+ --   ┃   │         (LamAbs () DeBruijn { dbnIndex = 0 } (Error ()))))
+ --97 ┃   testTacticOn tactName tactic (dTermToN uplc)
+ --
+ --    ┏━━ test/Tactics.hs ━━━
+ -- 99 ┃ testTacticOn :: MonadTest m => String -> Tactic -> NTerm -> m ()
+ --100 ┃ testTacticOn tactName tact uplc = do
+ --101 ┃   let res = run uplc
+ --102 ┃   let fails =
+ --103 ┃         [ uplc' | uplc' <- tact uplc, uplc' /= uplc, run uplc' ~/= res
+ --104 ┃         ]
+ --105 ┃   case fails of
+ --106 ┃     [] -> success
+ --107 ┃     (bad : _) -> do
+ --108 ┃       annotate $ prettyPrintTerm uplc
+ --    ┃       │ (\V-0->(\V-1->(\V-2->Error))) ((\V-3->(\V-4->(\V-5->Error))))
+ --109 ┃       annotate $ "produced: " ++ show res
+ --    ┃       │ produced: (Right (LamAbs () (Name {nameString = "i", nameUnique = Unique {unUnique = 1}}) (LamAbs () (Name {nameString = "i", nameUnique = Unique {unUnique = 2}}) (Error ()))),RestrictingSt (ExRestrictingBudget {unExRestrictingBudget = ExBudget {exBudgetCPU = ExCPU 999880808, exBudgetMemory = ExMemory 999500}}))
+ --110 ┃       annotate $ "Shrank by " ++ tactName ++ " to"
+ --    ┃       │ Shrank by weakUnsubs to
+ --111 ┃       annotate $ prettyPrintTerm bad
+ --    ┃       │ (\V-9->(\V-0->(\V-1->(\V-2->V-9))) ((\V-3->(\V-4->(\V-5->V-9))))) (Error)
+ --112 ┃       annotate $ "produced: " ++ show (run bad)
+ --    ┃       │ produced: (Left An error has occurred:  User error:
+ --    ┃       │ The provided Plutus code called 'error'.,RestrictingSt (ExRestrictingBudget {unExRestrictingBudget = ExBudget {exBudgetCPU = ExCPU 999999900, exBudgetMemory = ExMemory 999900}}))
+ --113 ┃       failure
+ --    ┃       ^^^^^^^
+ ((\x -> (\y -> (\z -> Error))) (\a -> (\b -> (\c -> Error))))
+

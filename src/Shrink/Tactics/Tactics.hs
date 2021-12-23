@@ -37,6 +37,7 @@ weakUnsubs = completeTactic $ \case
           fSubterm <- fSubterms
           vSubterm <- vSubterms
           guard $ fSubterm `equiv` vSubterm
+          guard $ whnf (snd fSubterm) == Success
           return $ do
             name <- newName
             let funTerm' = unsub (snd fSubterm) name funTerm
