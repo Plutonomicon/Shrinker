@@ -5,6 +5,7 @@ on:
       - '**.nix'
       - 'nix/sources.json'
       - 'shrinker.cabal'
+      - './unitTests'
     branches:
       - master
       - staging
