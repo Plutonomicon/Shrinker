@@ -122,8 +122,8 @@
               = "z9ut0y6umDIjJIRjz9KSvKgotuw06/S8QDwOtVdGiJ0=";
             "https://github.com/nomeata/tasty-expected-failure.git"."33b71e694b954e35c05859fff3ca886d8cfe5bfe"
               = "C/IWktTILklfPEAht/RE4IC8to6MrvrLmmbqgWsJlIM=";
-            "https://github.com/Plutonomicon/pluto.git"."aab7447040b0fe2c8bb79b5b3e87c9d23ac41683"
-              = "h1OQiRv6lDgipUvIUtKdeGJv0z3wTztUBTFLg8jzOW8=";
+            "https://github.com/Plutonomicon/pluto.git"."dbfd4a7216dca362d9dd1b95f6deb8b566ff2f14"
+              = "W0RRvTDGm/SvhnhBF7PRxIlpz/C6QQ7cEt8gXO6Ddes=";
             "https://github.com/input-output-hk/cardano-wallet"."6be73ab852c0592713dfe78218856d4a8a0ee69e"
               = "5IZuqlE/4aGH3TEuGYQsZwOpI/Q7DYzJ4q3stuqGpWc=";
             "https://github.com/input-output-hk/ouroboros-network"."1f4973f36f689d6da75b5d351fb124d66ef1057d"
