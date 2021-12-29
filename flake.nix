@@ -92,8 +92,8 @@
             ];
           };
           sha256map = {
-            "https://github.com/input-output-hk/plutus.git"."3f089ccf0ca746b399c99afe51e063b0640af547"
-              = "BhGQPiCv4UxVs0XEdMMddaNWiztmkoeJotpW/lrtqNs=";
+            "https://github.com/input-output-hk/plutus.git"."c8c5183f7facd967d48fe07b3b14465b8dd48fe7"
+              = "SrJgiww5Lcf8yEmjoZZh8RntZx06DEapTTChcttU1QU=";
             "https://github.com/input-output-hk/plutus-apps.git"."404af7ac3e27ebcb218c05f79d9a70ca966407c9"
               = "+T9TGzHEzyfixBysxLwy5VWVrL5xqKF5pcbRlHQr+wI=";
             "https://github.com/Quid2/flat.git"."ee59880f47ab835dbd73bea0847dab7869fc20d8"
