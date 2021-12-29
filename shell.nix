@@ -12,12 +12,9 @@ with import ./nix { };
       plutus-tx-plugin
       plutus-ledger-api
       pab.plutus_ledger_with_docs
-      plutus-pab
       plutus-core
       plutus-contract
-      playground-common
       prettyprinter-configurable
-      plutus-use-cases
       cabal-doctest
     ];
 
@@ -45,7 +42,7 @@ with import ./nix { };
     graphviz
 
     ### Example contracts
-    plutus-apps.plutus-pab-examples
+    #plutus-apps.plutus-pab-examples
   ];
 
   buildInputs = (with plutus-apps.pkgs;

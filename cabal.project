@@ -61,6 +61,5 @@ package cardano-api
 
 source-repository-package
   type: git
-  location: https://github.com/Plutonomicon/pluto.git
-  tag: dbfd4a7216dca362d9dd1b95f6deb8b566ff2f14
-
+  location: https://github.com/mlabs-haskell/pluto.git
+  tag: d1f008be8509e20677027c0477a59af49db3ad78

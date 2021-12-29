@@ -74,16 +74,12 @@
               ps.goblins
               ps.measures
               ps.orphans-deriving-via
-              ps.playground-common
               ps.plutus-contract
               ps.plutus-core
               ps.plutus-ledger
               ps.plutus-ledger-api
-              ps.plutus-pab
-              ps.plutus-playground-server
               ps.plutus-tx
               ps.plutus-tx-plugin
-              ps.plutus-use-cases
               ps.prettyprinter-configurable
               ps.quickcheck-dynamic
               ps.Win32-network
@@ -122,8 +118,8 @@
               = "z9ut0y6umDIjJIRjz9KSvKgotuw06/S8QDwOtVdGiJ0=";
             "https://github.com/nomeata/tasty-expected-failure.git"."33b71e694b954e35c05859fff3ca886d8cfe5bfe"
               = "C/IWktTILklfPEAht/RE4IC8to6MrvrLmmbqgWsJlIM=";
-            "https://github.com/Plutonomicon/pluto.git"."dbfd4a7216dca362d9dd1b95f6deb8b566ff2f14"
-              = "W0RRvTDGm/SvhnhBF7PRxIlpz/C6QQ7cEt8gXO6Ddes=";
+            "https://github.com/mlabs-haskell/pluto.git"."d1f008be8509e20677027c0477a59af49db3ad78"
+              = "AR8C1KtfIeFbMSp9dWmC09Dddtj9Gbk7YLVsJG6J1dQ=";
             "https://github.com/input-output-hk/cardano-wallet"."6be73ab852c0592713dfe78218856d4a8a0ee69e"
               = "5IZuqlE/4aGH3TEuGYQsZwOpI/Q7DYzJ4q3stuqGpWc=";
             "https://github.com/input-output-hk/ouroboros-network"."1f4973f36f689d6da75b5d351fb124d66ef1057d"

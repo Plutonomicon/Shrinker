@@ -89,33 +89,18 @@ library
     Shrink.ScopeM
     Shrink.Tactics.Util
   build-depends:
-    , aeson               ^>=1.5.0.0
     , bytestring          ^>=0.10.12.0
-    , cardano-prelude
     , containers
-    , data-default-class
-    , freer-extras
-    , freer-simple
-    , lens
     , mtl
-    , playground-common
-    , plutus-contract
     , plutus-core
     , plutus-ledger
     , plutus-ledger-api
-    , plutus-pab
     , plutus-tx
-    , plutus-tx-plugin
     , prettyprinter
-    , row-types
     , serialise
-    , servant
-    , servant-server
     , template-haskell
     , text                ^>=1.2.4.0
     , vector              ^>=0.12.1.2
-    , wai
-    , warp
   hs-source-dirs:  src
 
 
@@ -130,43 +115,24 @@ test-suite shrinker-test
     Paths_shrinker
   build-depends:
     , shrinker
-    , aeson                        ^>=1.5.0.0
     , base
-    , base-compat
     , bytestring                   ^>=0.10.12.0
-    , cardano-prelude
-    , containers
-    , data-default-class
     , directory
     , either
     , filepath
-    , freer-extras
-    , freer-simple
     , hedgehog
-    , lens
-    , playground-common
     , pluto
-    , plutus-contract
     , plutus-core
     , plutus-ledger
     , plutus-ledger-api
-    , plutus-pab
     , plutus-tx
-    , plutus-tx-plugin
-    , prettyprinter
     , QuickCheck
     , quickcheck-instances
-    , row-types
     , serialise
-    , servant
-    , servant-server
     , tasty
     , tasty-hedgehog
     , tasty-quickcheck
     , text                         ^>=1.2.4.0
-    , vector                       ^>=0.12.1.2
-    , wai
-    , warp
 
   hs-source-dirs: test
 
