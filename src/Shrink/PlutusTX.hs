@@ -24,4 +24,4 @@ shrinkCompiledSp sp comped =
       scriptBc = toStrict $ serialise script
    in case comped of
         SerializedCode _ maybePirByteString coverageIndex -> SerializedCode scriptBc maybePirByteString coverageIndex
-        DeserializedCode _ maybePir coverageIndex -> DeserializedCode prog maybePir coverageIndex  
+        DeserializedCode _ maybePir coverageIndex -> DeserializedCode prog maybePir coverageIndex
