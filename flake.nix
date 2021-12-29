@@ -88,7 +88,7 @@
               ps.quickcheck-dynamic
               ps.Win32-network
               ps.word-array
-              ps.tasty-expected-failure
+              #ps.tasty-expected-failure
             ];
           };
           sha256map = {
@@ -110,13 +110,7 @@
               = "BtbT5UxOAADvQD4qTPNrGfnjQNgbYNO4EAJwH2ZsTQo=";
             "https://github.com/input-output-hk/cardano-addresses"."d2f86caa085402a953920c6714a0de6a50b655ec"
               = "XgXQKJHRKAFwIjONh19D/gKE0ARlhMXXcV74eZpd0lw=";
-            "https://github.com/j-mueller/cardano-wallet"."6be73ab852c0592713dfe78218856d4a8a0ee69e"
-              = "5IZuqlE/4aGH3TEuGYQsZwOpI/Q7DYzJ4q3stuqGpWc=";
-            "https://github.com/input-output-hk/ouroboros-network"."1f4973f36f689d6da75b5d351fb124d66ef1057d"
-              = "lwTgyoZBQAaU6Sh7BouGJGUvK1tSVrWhJP63v7MpwKA=";
-            "https://github.com/input-output-hk/iohk-monitoring-framework"."46f994e216a1f8b36fe4669b47b2a7011b0e153c"
-              = "QE3QRpIHIABm+qCP/wP4epbUx0JmSJ9BMePqWEd3iMY=";
-            "https://github.com/input-output-hk/cardano-ledger-specs"."bf008ce028751cae9fb0b53c3bef20f07c06e333"
+            "https://github.com/j-mueller/cardano-ledger-specs"."bf008ce028751cae9fb0b53c3bef20f07c06e333"
               = "HTPOmVOXgBD/3uAxZip/HSttaKcJ+uImYDbuwANAw1c=";
             "https://github.com/input-output-hk/cardano-node.git"."b6ca519f97a0e795611a63174687e6bb70c9f752"
               = "tuEtSCJOk1MA9sguxL13XLa+qHaz//v7eNyhxHC9tHw=";
@@ -129,7 +123,13 @@
             "https://github.com/nomeata/tasty-expected-failure.git"."33b71e694b954e35c05859fff3ca886d8cfe5bfe"
               = "C/IWktTILklfPEAht/RE4IC8to6MrvrLmmbqgWsJlIM=";
             "https://github.com/Plutonomicon/pluto.git"."aab7447040b0fe2c8bb79b5b3e87c9d23ac41683"
-              = "0000000000000000000000000000000000000000000=";
+              = "h1OQiRv6lDgipUvIUtKdeGJv0z3wTztUBTFLg8jzOW8=";
+            "https://github.com/input-output-hk/cardano-wallet"."6be73ab852c0592713dfe78218856d4a8a0ee69e"
+              = "5IZuqlE/4aGH3TEuGYQsZwOpI/Q7DYzJ4q3stuqGpWc=";
+            "https://github.com/input-output-hk/ouroboros-network"."1f4973f36f689d6da75b5d351fb124d66ef1057d"
+              = "lwTgyoZBQAaU6Sh7BouGJGUvK1tSVrWhJP63v7MpwKA=";
+            "https://github.com/input-output-hk/iohk-monitoring-framework"."46f994e216a1f8b36fe4669b47b2a7011b0e153c"
+              = "QE3QRpIHIABm+qCP/wP4epbUx0JmSJ9BMePqWEd3iMY=";
           };
         };
     in

@@ -1,23 +1,4 @@
-index-state: 2021-08-14T00:00:00Z
 
-packages: ./.
-
--- You never, ever, want this.
-write-ghc-environment-files: never
-
--- Always build tests and benchmarks.
-tests: true
-benchmarks: true
-
-source-repository-package
-  type: git
-  location: https://github.com/Plutonomicon/pluto.git
-  tag: aab7447040b0fe2c8bb79b5b3e87c9d23ac41683
-
--- old commit because the next commit requires conflicting base
--- the conflicting base version is only required by an executable 
--- which I don't need so this feels fixable but I'm stumped
--- it may also be fixed by removing unused imports here
 
 source-repository-package
   type: git
@@ -30,7 +11,7 @@ source-repository-package
     word-array
     prettyprinter-configurable
     stubs/plutus-ghc-stub
-  tag: 3f8c1e22292d68d92f01f9a62a60621df01cdd4e
+  tag: 3f089ccf0ca746b399c99afe51e063b0640af547
 
 source-repository-package
   type: git
@@ -40,6 +21,7 @@ source-repository-package
     freer-extras
     playground-common
     plutus-chain-index
+    plutus-chain-index-core
     plutus-contract
     plutus-ledger
     plutus-pab
@@ -47,58 +29,7 @@ source-repository-package
     plutus-use-cases
     quickcheck-dynamic
     web-ghc
-  tag: 4a109e91c79c7a881aac3a6564bbd377141cd2db
-
--- The following sections are copied from the 'plutus' repository cabal.project at the revision
--- given above.
--- This is necessary because the  plutus' libraries depend on a number of other libraries which are
--- not on Hackage, and so need to be pulled in as `source-repository-package`s themselves. Make sure to
--- re-update this section from the template when you do an upgrade.
-
----------- *replace here* ----------------------------------------------------------------------
-
--- This is also needed so evenful-sql-common will build with a
--- newer version of persistent. See stack.yaml for the mirrored
--- configuration.
-package eventful-sql-common
-  ghc-options: -XDerivingStrategies -XStandaloneDeriving -XUndecidableInstances -XDataKinds -XFlexibleInstances -XMultiParamTypeClasses
-
--- See the note on nix/pkgs/default.nix:agdaPackages for why this is here.
--- (NOTE this will change to ieee754 in newer versions of nixpkgs).
-extra-packages: ieee, filemanip
-
-
-allow-newer:
-           -- Copied from plutus-core
-           size-based:template-haskell
-           , ouroboros-consensus-byron:formatting
-           , beam-core:aeson
-           , beam-sqlite:aeson
-           , beam-sqlite:dlist
-           , beam-migrate:aeson
-
--- Copied from plutus-core
-constraints:
-  -- big breaking change here, inline-r doens't have an upper bound
-  singletons < 3.0
-  -- bizarre issue: in earlier versions they define their own 'GEq', in newer
-  -- ones they reuse the one from 'some', but there isn't e.g. a proper version
-  -- constraint from dependent-sum-template (which is the library we actually use).
-  , dependent-sum > 0.6.2.0
-
--- These packages appear in our dependency tree and are very slow to build.
--- Empirically, turning off optimization shaves off ~50% build time.
--- It also mildly improves recompilation avoidance.
--- For deve work we don't care about performance so much, so this is okay.
-package cardano-ledger-alonzo
-  optimization: False
-package ouroboros-consensus-shelley
-  optimization: False
-package ouroboros-consensus-cardano
-  optimization: False
-package cardano-api
-  optimization: False
-
+  tag: 404af7ac3e27ebcb218c05f79d9a70ca966407c9
 
 -- Copied from plutus-core
 source-repository-package
@@ -110,12 +41,12 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/purescript-bridge.git
-  tag: 6a92d7853ea514be8b70bab5e72077bf5a510596
+  tag: 366fc70b341e2633f3ad0158a577d52e1cd2b138
 
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/servant-purescript.git
-  tag: a0c7c7e37c95564061247461aef4be505a853538
+  tag: ebea59c7bdfc0338d83fca772b9a57e28560bcde
 
 -- Copied from plutus-core
 source-repository-package
@@ -155,15 +86,20 @@ source-repository-package
   tag: d2f86caa085402a953920c6714a0de6a50b655ec
   subdir:
     core
+    command-line
 
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/cardano-wallet
-  tag: ae7569293e94241ef6829139ec02bd91abd069df
+  tag: 6be73ab852c0592713dfe78218856d4a8a0ee69e
   subdir:
+    lib/launcher
+    lib/shelley
+    lib/cli
     lib/text-class
     lib/strict-non-empty-containers
     lib/core
+    lib/core-integration
     lib/test-utils
     lib/numeric
 
@@ -214,7 +150,7 @@ source-repository-package
 
 source-repository-package
   type: git
-  location: https://github.com/input-output-hk/cardano-ledger-specs
+  location: https://github.com/j-mueller/cardano-ledger-specs
   tag: bf008ce028751cae9fb0b53c3bef20f07c06e333
   subdir:
     byron/ledger/impl
@@ -226,10 +162,14 @@ source-repository-package
     eras/byron/crypto/test
     eras/byron/ledger/executable-spec
     eras/byron/ledger/impl/test
+    eras/shelley/test-suite
     eras/shelley/impl
+    eras/shelley/chain-and-ledger/shelley-spec-ledger-test
+    eras/shelley/chain-and-ledger/executable-spec
     eras/shelley-ma/impl
     libs/non-integral
     libs/small-steps
+    libs/cardano-ledger-pretty
     semantics/small-steps-test
 
 -- A lot of plutus-apps dependencies have to be synchronized with the dependencies of
