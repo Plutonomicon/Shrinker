@@ -5,7 +5,7 @@ This project contains tools for shrinking plutus scripts.
 
 ### PlutusTX
 
-For plutus TX Shrinker is still somewhat expirementall. You can use either `Shrink.PlutusTX.shrinkCompiled` or `Shrink.PlutusTXTH.shrinkCompiledTH`. Shrink can be fairly slow on large scripts, hopefully this will improve with further development, but with plutustx there also seem to be laziness issues where shrink will run on the same script many times causing it to be much slower.
+For plutus TX Shrinker is still somewhat expirementall. You can use either `Shrink.PlutusTX.shrinkCompiled` or `Shrink.PlutusTXTH.shrinkCompiledTH`, both of which require you build `shrinker-tx` from the `./shrinker-tx` directory. Shrink can be fairly slow on large scripts, hopefully this will improve with further development, but with plutustx there also seem to be laziness issues where shrink will run on the same script many times causing it to be much slower.
 
 ### Other
 
