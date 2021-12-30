@@ -1,5 +1,5 @@
 cabal-version:      3.0
-name:               shrinker
+name:               shrinker-testing
 version:            0.1
 synopsis:           TODO
 description:        Tools for optimizing uplc script sizes
@@ -13,8 +13,8 @@ copyright:          TODO
 category:           TODO
 build-type:         Simple
 tested-with:        GHC ==8.10.4
-extra-source-files: 
-  README.md
+data-files:
+  ./unitTests/*.pluto
 
 source-repository head
   type:     git
@@ -71,27 +71,62 @@ common common-lang
 
   default-language:   Haskell2010
 
--- Libraries
-
-library 
+library
   import: common-lang
   exposed-modules:
-    Shrink
-    Shrink.Types
-    Shrink.Names
-    Shrink.Tactics.Safe
-    Shrink.Tactics.Tactics
-  other-modules:
-    Shrink.ScopeM
-    Shrink.Tactics.Util
+    Gen 
+    Tactics
   build-depends:
-    , containers
+    , shrinker
+    , base
+    , bytestring                   
+    , directory
+    , either
+    , filepath
+    , hedgehog
+    , pluto
+    , plutus-core
     , plutus-ledger
     , plutus-ledger-api
-    , mtl
+    , plutus-tx
+    , QuickCheck
+    , quickcheck-instances
+    , serialise
+    , tasty
+    , tasty-hedgehog
+    , tasty-quickcheck
+    , text                         
+  hs-source-dirs: src
+
+test-suite shriker-tests
+  import:         common-lang 
+  type:           exitcode-stdio-1.0
+  main-is:        Spec.hs
+  other-modules:
+    UnitTests
+    Paths_shrinker_testing
+  build-depends:
+    , shrinker
+    , shrinker-testing
+    , base
+    , bytestring                   
+    , directory
+    , either
+    , filepath
+    , hedgehog
+    , pluto
     , plutus-core
-    , prettyprinter
-    , text                
-    , vector             
-  hs-source-dirs:  src
+    , plutus-ledger
+    , plutus-ledger-api
+    , plutus-tx
+    , QuickCheck
+    , quickcheck-instances
+    , serialise
+    , tasty
+    , tasty-hedgehog
+    , tasty-quickcheck
+    , text                         
+
+  hs-source-dirs: spec
+
 

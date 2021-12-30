@@ -1,6 +1,6 @@
 module UnitTests (makeUnitTests) where
 
-import Paths_shrinker (getDataFileName)
+import Paths_shrinker_testing (getDataFileName)
 
 import Tactics (Similar ((~=)), run, testTacticOn)
 

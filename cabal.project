@@ -1,13 +1,16 @@
 index-state: 2021-08-14T00:00:00Z
 
-packages: ./.
+packages: 
+  ./.
+  ./shrinker-tx
+  ./testing
 
 -- You never, ever, want this.
 write-ghc-environment-files: never
 
 -- Always build tests and benchmarks.
 tests: true
-benchmarks: true
+--benchmarks: true
 
 -- The following sections are copied from the 'plutus' repository cabal.project at the revision
 -- given above.
