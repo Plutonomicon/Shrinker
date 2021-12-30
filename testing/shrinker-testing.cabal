@@ -82,11 +82,9 @@ library
     , bytestring                   
     , directory
     , either
-    , filepath
     , hedgehog
     , pluto
     , plutus-core
-    , plutus-ledger
     , plutus-ledger-api
     , plutus-tx
     , QuickCheck
@@ -116,7 +114,6 @@ test-suite shriker-tests
     , hedgehog
     , pluto
     , plutus-core
-    , plutus-ledger
     , plutus-ledger-api
     , plutus-tx
     , QuickCheck

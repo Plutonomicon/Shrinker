@@ -86,7 +86,6 @@ library
     Shrink.Tactics.Util
   build-depends:
     , containers
-    , plutus-ledger
     , plutus-ledger-api
     , mtl
     , plutus-core

@@ -82,7 +82,6 @@ library
     , plutus-tx
     , serialise
     , plutus-core
-    , plutus-ledger
     , plutus-ledger-api
     , template-haskell
   hs-source-dirs: src
