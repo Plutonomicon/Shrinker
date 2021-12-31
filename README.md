@@ -49,3 +49,6 @@ Clean Pairs is a simple tactic required to make currying useful.
 
 It reduces `fst (x,_)` to `x` and `fst (_,y)` to `y`. It's required to make currying useful.
 
+#### Clean Force Delay 
+
+Clean Force Delay is a simple tactic that removes delays which are imediately forced, ie `!#()` becomes `()` to use pluto syntax

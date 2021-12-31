@@ -66,6 +66,8 @@ instance Similar (UPLC.Term Name DefaultUni DefaultFun ()) where
     (UPLC.Builtin () a, UPLC.Builtin () b) -> a == b
     (UPLC.Constant () a, UPLC.Constant () b) -> a == b
     (UPLC.Error (), UPLC.Error ()) -> True
+    (UPLC.Force _ (UPLC.Delay _ a),b) -> a ~= b
+    (a,UPLC.Force _ (UPLC.Delay _ b)) -> a ~= b
     _ -> False
 
 (~/=) :: Similar a => a -> a -> Bool

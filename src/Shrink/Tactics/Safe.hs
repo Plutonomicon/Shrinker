@@ -2,14 +2,16 @@ module Shrink.Tactics.Safe (
   safeTactList,
 ) where
 
-import Shrink.Tactics.Util (completeRec, mentions, subName', whnf)
+import Shrink.Tactics.Util (completeRec, mentions, subName', whnf, isData)
 import Shrink.Types (SafeTactic, WhnfRes (Err, Success, Unclear))
 
+import Control.Monad(guard)
+
 import PlutusCore.Default (DefaultFun (FstPair, MkPairData, SndPair))
-import UntypedPlutusCore.Core.Type (Term (Apply, Builtin, Error, LamAbs, Var))
+import UntypedPlutusCore.Core.Type (Term (Apply, Builtin, Error, LamAbs, Var,Force, Delay))
 
 safeTactList :: [(String, SafeTactic)]
-safeTactList = [("removeDeadCode", removeDeadCode), ("clean pairs", cleanPairs)]
+safeTactList = [("removeDeadCode", removeDeadCode), ("cleanPairs", cleanPairs),("cleanForceDelay",cleanForceDelay)]
 
 cleanPairs :: SafeTactic
 cleanPairs = completeRec $ \case
@@ -23,8 +25,11 @@ cleanPairs = completeRec $ \case
             (Builtin _ MkPairData)
             fstTerm
           )
-        _
-      ) -> Just $ cleanPairs fstTerm
+        sndTerm
+      ) -> do
+        guard $ isData fstTerm
+        guard $ isData sndTerm
+        return $ Delay () $ Delay () $ cleanPairs fstTerm
   Apply
     _
     (Builtin _ SndPair)
@@ -33,11 +38,13 @@ cleanPairs = completeRec $ \case
         ( Apply
             _
             (Builtin _ MkPairData)
-            _
+            fstTerm
           )
         sndTerm
-      ) ->
-      Just $ cleanPairs sndTerm
+      ) -> do
+      guard $ isData fstTerm
+      guard $ isData sndTerm
+      return $ Delay () $ Delay () $ cleanPairs sndTerm
   _ -> Nothing
 
 removeDeadCode :: SafeTactic
@@ -53,4 +60,12 @@ removeDeadCode = completeRec $ \case
           else Just term
       Unclear -> Nothing
       Err -> Just $ Error ()
+  _ -> Nothing
+
+cleanForceDelay :: SafeTactic
+cleanForceDelay = completeRec $ \case
+  (Force _ (Delay _ t)) -> Just t
+  (Force _ t) -> case cleanForceDelay t of
+                   Delay _ t' -> Just t'
+                   t' -> Just $ Force () t'
   _ -> Nothing

@@ -1,0 +1,1 @@
+(!! FstPair (MkPairData (IData 1) (IData 2)) +i SndPair (MkPairData (IData 1) (IData 2)))

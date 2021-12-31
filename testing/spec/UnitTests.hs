@@ -10,7 +10,7 @@ import Shrink.Types (DTerm, NTerm, Tactic, safeTactics, tactics)
 
 import Control.Arrow (second)
 import Control.Monad (filterM, when, (>=>))
-import Data.Either (rights)
+import Data.Either (rights,isRight)
 import Data.Functor ((<&>))
 import Data.List (isInfixOf)
 import Data.Text (pack)
@@ -33,26 +33,30 @@ makeUnitTests = do
   unitTestDir <- getDataFileName "./unitTests"
   unitTests <- filterM doesFileExist . fmap (unitTestDir </>) =<< listDirectory unitTestDir
   srcs <- mapM (fmap pack . readFile) unitTests
-  let uplcs' =
-        rights
+  let uplcs'' = 
           [ (name,) <$> (parseProgram name >=> (fmap Script . desugar . annDeBruijn) $ src)
           | (name, src) <- zip unitTests srcs
           ]
+  let uplcs' = rights uplcs''
       uplcs = [(name, uplc) | (name, Script (Program _ _ uplc)) <- uplcs']
   return $
     testGroup "Unit tests" $
-      (fullTest <$> uplcs)
-        ++ ( do
-              (name, uplc) <- uplcs
-              (tactName, tact) <-
-                [Safe, Unsafe] >>= \case
-                  Unsafe -> tactics defaultShrinkParams
-                  Safe -> safeTactics defaultShrinkParams <&> second (return .)
-              return $
-                testProperty ("testing " ++ tactName ++ " on " ++ name) . property $ do
-                  when (('/' : tactName) `isInfixOf` name) $ testNonTrivial tact (dTermToN uplc)
-                  testTacticOn tactName tact (dTermToN uplc)
-           )
+      [ testProperty "unit-tests compile" . property $ do
+        annotate $ show uplc
+        assert $ isRight uplc
+      | uplc <- uplcs'' ] ++
+      (fullTest <$> uplcs) ++
+        ( do
+            (name, uplc) <- uplcs
+            (tactName, tact) <-
+              [Safe, Unsafe] >>= \case
+                Unsafe -> tactics defaultShrinkParams
+                Safe -> safeTactics defaultShrinkParams <&> second (return .)
+            return $
+              testProperty ("testing " ++ tactName ++ " on " ++ name) . property $ do
+                when (('/' : tactName) `isInfixOf` name) $ testNonTrivial tact (dTermToN uplc)
+                testTacticOn tactName tact (dTermToN uplc)
+         )
 
 testNonTrivial :: MonadTest m => Tactic -> NTerm -> m ()
 testNonTrivial tact term = case tact term of

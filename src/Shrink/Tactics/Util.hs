@@ -16,6 +16,7 @@ module Shrink.Tactics.Util (
   subName',
   completeRec,
   appBind,
+  isData,
 ) where
 
 import Shrink.ScopeM (newName, runScopedTact)
@@ -283,3 +284,12 @@ reconsile m1 m2 = do
 
 applyArgs :: NTerm -> [NTerm] -> NTerm
 applyArgs = foldl (Apply ())
+
+-- is data may have false negatives but not false positives
+isData :: NTerm -> Bool
+isData (Apply _ (Builtin _ Default.IData) _) = True
+isData (Apply _ (Builtin _ Default.BData) _) = True
+isData (Apply _ (Builtin _ Default.ConstrData) _) = True
+isData (Apply _ (Builtin _ Default.MapData) _) = True
+isData (Apply _ (Builtin _ Default.ListData) _) = True
+isData _ = False
