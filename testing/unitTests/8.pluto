@@ -1,0 +1,37 @@
+--
+--                ┏━━ src/Tactics.hs ━━━
+--             97 ┃ testTactic :: String -> Tactic -> TestTree
+--             98 ┃ testTactic tactName tactic = testProperty "Tactic doesn't break code" . property $ do
+--             99 ┃   uplc <- forAll genUplc
+--                ┃   │ Delay
+--                ┃   │   ()
+--                ┃   │   (Force
+--                ┃   │      ()
+--                ┃   │      (Apply
+--                ┃   │         ()
+--                ┃   │         (LamAbs
+--                ┃   │            ()
+--                ┃   │            DeBruijn { dbnIndex = 0 }
+--                ┃   │            (Delay () (Constant () (Some (ValueOf integer (-100000000000))))))
+--                ┃   │         (Constant () (Some (ValueOf integer (-100000000000))))))
+--            100 ┃   testTacticOn tactName tactic (dTermToN uplc)
+--
+--                ┏━━ src/Tactics.hs ━━━
+--            102 ┃ testTacticOn :: MonadTest m => String -> Tactic -> NTerm -> m ()
+--            103 ┃ testTacticOn tactName tact uplc = do
+--            104 ┃   let res = run uplc
+--            105 ┃   let fails =
+--            106 ┃         [ uplc' | uplc' <- tact uplc, uplc' /= uplc, run uplc' ~/= res
+--            107 ┃         ]
+--            108 ┃   case fails of
+--            109 ┃     [] -> success
+--            110 ┃     (bad : _) -> do
+--            111 ┃       annotate $ prettyPrintTerm uplc
+--                ┃       │ #(!((\V-0->#(-100000000000)) (-100000000000)))
+--            112 ┃       annotate $ "produced: " ++ show res
+--                ┃       │ produced: (Right (Delay () (Force () (Apply () (LamAbs () (Name {nameString = "i", nameUnique = Unique {unUnique = 0}}) (Delay () (Constant () (Some (ValueOf integer (-100000000000)))))) (Constant () (Some (ValueOf integer (-100000000000))))))),RestrictingSt (ExRestrictingBudget {unExRestrictingBudget = ExBudget {exBudgetCPU = ExCPU 999970127, exBudgetMemory = ExMemory 999800}}))
+--            113 ┃       annotate $ "Shrank by " ++ tactName ++ " to"
+--                ┃       │ Shrank by subs to
+--            114 ┃       annotate $ prettyPrintTerm bad
+--                ┃       │ #(!(#(-100000000000)))
+#(!((\x -> ()) ()))

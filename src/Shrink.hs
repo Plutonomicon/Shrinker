@@ -4,6 +4,7 @@ module Shrink (
   withoutTactics,
   defaultShrinkParams,
   --testing exports
+  traceShrinkDTerm,
   shrinkDTerm,
   size,
 ) where
@@ -11,11 +12,12 @@ module Shrink (
 import Shrink.Names (dTermToN, nTermToD)
 import Shrink.Tactics.Safe (safeTactList)
 import Shrink.Tactics.Tactics (tactList)
-import Shrink.Types (DProgram, DTerm, NTerm, ShrinkParams (ShrinkParams, extraSteps, parallelTactics, parallelTerms, safeTactics, tactics))
+import Shrink.Types (Tactic,SafeTactic,MaybeTraceTerm,Trace,DProgram, DTerm, NTerm, ShrinkParams (ShrinkParams, extraSteps, parallelTactics, parallelTerms, safeTactics, tactics))
 
 import Control.Monad (replicateM)
+import Control.Arrow (first,second)
 import Data.Function (on)
-import Data.List (group, groupBy, sortOn)
+import Data.List (groupBy, sortOn)
 import Plutus.V1.Ledger.Scripts (Script (Script), scriptSize)
 import UntypedPlutusCore (Version (Version))
 import UntypedPlutusCore.Core.Type (Program (Program))
@@ -32,31 +34,47 @@ shrinkProgramSp sp (Program _ version term) = Program () version (shrinkDTermSp 
 shrinkDTerm :: DTerm -> DTerm
 shrinkDTerm = shrinkDTermSp defaultShrinkParams
 
+traceShrinkDTerm :: DTerm -> (DTerm,Trace)
+traceShrinkDTerm = traceShrinkDTermSp defaultShrinkParams
+
 shrinkDTermSp :: ShrinkParams -> DTerm -> DTerm
 shrinkDTermSp sp = nTermToD . shrinkNTermSp sp . dTermToN
 
 shrinkNTermSp :: ShrinkParams -> NTerm -> NTerm
-shrinkNTermSp sp = runShrink (extraSteps sp) sp . return
+shrinkNTermSp sp = fst . shrinkMTraceTermSp sp . (,Nothing)
 
-runShrink :: Integer -> ShrinkParams -> [NTerm] -> NTerm
+traceShrinkDTermSp :: ShrinkParams -> DTerm -> (DTerm,Trace)
+traceShrinkDTermSp sp = first nTermToD . traceShrinkNTermSp sp . dTermToN
+
+traceShrinkNTermSp :: ShrinkParams -> NTerm -> (NTerm,Trace)
+traceShrinkNTermSp sp =  second 
+  (\case
+    Just t -> t
+    Nothing -> error "pretty sure this is unreachable but trace was dumped"
+  ) . shrinkMTraceTermSp sp . (,Just []) 
+
+shrinkMTraceTermSp :: ShrinkParams -> MaybeTraceTerm -> MaybeTraceTerm
+shrinkMTraceTermSp sp = runShrink (extraSteps sp) sp . return
+
+runShrink :: Integer -> ShrinkParams -> [MaybeTraceTerm] -> MaybeTraceTerm
 runShrink es sp terms
   | sizeLast > sizeNow = runShrink (extraSteps sp) sp terms'
   | es > 0 = runShrink (es -1) sp terms'
   | otherwise = head terms
   where
-    sizeNow = size $ head terms
-    sizeLast = size $ head terms'
+    sizeNow = size $ fst $ head terms
+    sizeLast = size $ fst $ head terms'
     terms' = stepShrink sp terms
 
-stepShrink :: ShrinkParams -> [NTerm] -> [NTerm]
+stepShrink :: ShrinkParams -> [MaybeTraceTerm] -> [MaybeTraceTerm]
 stepShrink sp terms =
   let cands = do
-        tacts <- replicateM (fromIntegral $ parallelTactics sp) (snd <$> tactics sp)
-        foldl (>>=) terms tacts
-      cands' = foldl (.) id (snd <$> safeTactics sp) <$> cands
-      sizedCands = [(size c, c) | c <- cands']
+        tacts <- replicateM (fromIntegral $ parallelTactics sp) (tactics sp)
+        foldl (>>=) terms (appTact <$> tacts)
+      cands' = foldl (.) id (appSafe <$> safeTactics sp) <$> cands
+      sizedCands = [(size $ fst c, c) | c <- cands']
       batches = groupBy ((==) `on` fst) . sortOn fst $ sizedCands
-      uniques = concat $ fmap head . group . sortOn (show . snd) <$> batches
+      uniques = concat $ fmap head . groupBy ((==) `on` (fst . snd)) . sortOn (show . fst . snd) <$> batches
    in take (fromIntegral $ parallelTerms sp) (snd <$> uniques)
 
 -- TODO: possible performancce improvement right own compare instead of show
@@ -83,3 +101,12 @@ withoutTactics ts =
     { safeTactics = filter (\(tn, _) -> tn `notElem` ts) (safeTactics defaultShrinkParams)
     , tactics = filter (\(tn, _) -> tn `notElem` ts) (tactics defaultShrinkParams)
     }
+
+appSafe :: (String,SafeTactic) -> MaybeTraceTerm -> MaybeTraceTerm
+appSafe (name,tact) (term,mtrace) = (tact term,((name,0):) <$> mtrace)
+
+appTact :: (String,Tactic) -> MaybeTraceTerm -> [MaybeTraceTerm]
+appTact (name,tact) (term,mtrace) = [ (term',((name,i):)<$> mtrace) 
+                                    | (term',i) <- zip (tact term) [0..] ]
+
+

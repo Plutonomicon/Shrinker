@@ -3,7 +3,7 @@ module Shrink.Tactics.Tactics (
 ) where
 
 import Shrink.ScopeM (liftScope, newName)
-import Shrink.Tactics.Util (appBind, completeTactic, equiv, makeLambs, sepMaybe, subTerms, unsub, weakEquiv, whnf, withTemplate)
+import Shrink.Tactics.Util (appBind, completeTactic, equiv, makeLambs, sepMaybe, subTerms, unsub, weakEquiv, whnf, withTemplate, succeds)
 import Shrink.Types (Tactic, WhnfRes (Err, Success, Unclear))
 
 import Control.Monad (guard)
@@ -23,7 +23,7 @@ subs :: Tactic
 subs = completeTactic $ \case
   Apply _ (LamAbs _ name funTerm) varTerm ->
     case whnf varTerm of
-      Success -> return $ Just [appBind name varTerm funTerm]
+      Success () -> return $ Just [appBind name varTerm funTerm]
       Unclear -> return Nothing
       Err -> return $ Just [Error ()]
   _ -> return Nothing
@@ -37,7 +37,7 @@ weakUnsubs = completeTactic $ \case
           fSubterm <- fSubterms
           vSubterm <- vSubterms
           guard $ fSubterm `equiv` vSubterm
-          guard $ whnf (snd fSubterm) == Success
+          guard $ succeds (snd fSubterm)
           return $ do
             name <- newName
             let funTerm' = unsub (snd fSubterm) name funTerm

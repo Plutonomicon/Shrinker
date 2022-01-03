@@ -17,20 +17,23 @@ module Shrink.Tactics.Util (
   completeRec,
   appBind,
   isData,
+  succeds,
 ) where
 
 import Shrink.ScopeM (newName, runScopedTact)
-import Shrink.Types (MonadScope, NTerm, PartialTactic, Scope, ScopeM, ScopeMT, ScopedTactic, Tactic, WhnfRes (Err, Success, Unclear))
+import Shrink.Types (MonadScope, NTerm, PartialTactic, Scope, ScopeM, ScopeMT, ScopedTactic, Tactic, WhnfRes (Err, Success, Unclear),SimpleType(UnclearType,Arr,Delayed,Integer,String,ByteString,Unit,Bool,Data,List),(-->))
+--import Shrink.Types (MonadScope, NTerm, PartialTactic, Scope, ScopeM, ScopeMT, ScopedTactic, Tactic, WhnfRes (Err, Success, Unclear),SimpleType(UnclearType,Integer,String,ByteString,Data,Arr))
 
 import Control.Arrow (first, second)
+import Control.Applicative (liftA2)
 import Control.Monad (guard, join, liftM2)
 import Control.Monad.Reader (MonadReader, ask, local, runReaderT)
 import Control.Monad.State (get, put, runStateT)
-import Data.Functor ((<&>))
+import Data.Functor ((<&>),($>))
 import Data.Functor.Identity (Identity (Identity), runIdentity)
 import Data.Map (Map)
 import Data.Maybe (fromMaybe)
-import PlutusCore.Default (DefaultFun)
+--import PlutusCore.Default (DefaultFun)
 import UntypedPlutusCore (Name)
 import UntypedPlutusCore.Core.Type (Term (Apply, Builtin, Constant, Delay, Error, Force, LamAbs, Var))
 
@@ -100,60 +103,118 @@ mentions name = \case
   Delay _ term -> mentions name term
   _ -> False
 
-whnf :: NTerm -> WhnfRes
-whnf = whnf' 100
+succeds :: NTerm -> Bool
+succeds t = whnf t == Success ()
 
-whnf' :: Integer -> NTerm -> WhnfRes
+whnf :: NTerm -> WhnfRes ()
+whnf t = whnf' 100 t $> ()
+
+whnf' :: Integer -> NTerm -> WhnfRes SimpleType
 whnf' 0 = const Unclear
 whnf' n =
   let rec = whnf' (n -1)
    in \case
-        Var {} -> Success
-        -- While Vars can be bound to error
-        -- that lambda will throw an error first so this is safe
-        LamAbs {} -> Success
-        Apply _ (LamAbs _ name lTerm) valTerm ->
-          case rec valTerm of
-            Err -> Err
-            res -> min res $ rec (appBind name valTerm lTerm)
-        Apply _ (Apply _ (Builtin _ builtin) arg1) arg2 ->
-          if safe2Arg builtin
-            then min (rec arg1) (rec arg2)
-            else min Unclear $ min (rec arg1) (rec arg2)
-        Apply _ fTerm xTerm -> min Unclear $ min (rec fTerm) (rec xTerm)
-        -- it should be possible to make this clear more often
-        -- ie. a case over builtins
+        -- TODO: keep track of local binds in scopeM 
+        -- and variable types clear when possible
+        Var {} -> Success UnclearType
+        -- TODO: add polymorphism to 
+        -- simple types so lambdas can be typed 
+        LamAbs {} -> Success UnclearType
+        Apply _ (LamAbs _ name lTerm) valTerm -> rec valTerm *> rec (appBind name valTerm lTerm)
+        Apply _ fTerm xTerm -> let
+          f = rec fTerm
+          x = rec xTerm 
+            in illegalJoin $ liftA2 (curry (\case
+                (Arr xt yt,xt')
+                  | xt == xt' -> pure yt
+                  | xt  == UnclearType -> Unclear
+                  | xt' == UnclearType -> Unclear
+                  | otherwise  -> Err
+                  -- this case being when xt and xt' are both clear but still different
+                  -- which will always result in a type error
+                (UnclearType,_) -> Unclear
+                (_,_) -> Err 
+                -- f type is clear and not a function
+                -- must be a type error
+                                         )) f x 
         Force _ (Delay _ term) -> rec term
-        Force {} -> Unclear
-        Delay {} -> Success
-        Constant {} -> Success
-        Builtin {} -> Success
+        Force _ t -> case rec t of
+                       Success (Delayed t') -> Success t'
+                       Success UnclearType -> Unclear
+                       Success _ -> Err
+                       r -> r
+        Delay _ t -> case rec t of
+                        Success t' -> Success (Delayed t')
+                        _ -> Success UnclearType
+        Constant _ c -> Success $ 
+          case c of
+            Default.Some (Default.ValueOf Default.DefaultUniInteger _) -> Integer
+            Default.Some (Default.ValueOf Default.DefaultUniString _) -> String
+            Default.Some (Default.ValueOf Default.DefaultUniByteString _) -> ByteString
+            Default.Some (Default.ValueOf Default.DefaultUniUnit _) -> Unit
+            Default.Some (Default.ValueOf Default.DefaultUniBool _) -> Bool
+            Default.Some (Default.ValueOf Default.DefaultUniData _) -> Data
+            _ -> UnclearType
+        Builtin _ b -> Success $
+          let 
+              bin x = x --> x --> x
+              binInt = bin Integer
+              comp x = x --> x --> Bool
+              compInts = comp Integer
+              compBS = comp ByteString
+          in
+          case b of
+            Default.AddInteger -> binInt
+            Default.SubtractInteger -> binInt
+            Default.MultiplyInteger -> binInt 
+            Default.EqualsInteger -> compInts 
+            Default.LessThanInteger -> compInts
+            Default.LessThanEqualsInteger -> compInts
+            Default.AppendByteString -> bin ByteString 
+            Default.ConsByteString -> Integer --> ByteString --> ByteString
+            Default.EqualsByteString -> compBS
+            Default.LessThanByteString -> compBS
+            Default.LessThanEqualsByteString -> compBS
+            Default.VerifySignature -> ByteString --> ByteString --> ByteString --> String
+            Default.AppendString -> bin String
+            Default.EqualsString -> comp String
+            Default.ConstrData -> Integer --> List Data --> Data
+            Default.EqualsData -> comp Data
+            _ -> UnclearType
         Error {} -> Err
 
-safe2Arg :: DefaultFun -> Bool
-safe2Arg = \case
-  Default.AddInteger -> True
-  Default.SubtractInteger -> True
-  Default.MultiplyInteger -> True
-  Default.EqualsInteger -> True
-  Default.LessThanInteger -> True
-  Default.LessThanEqualsInteger -> True
-  Default.AppendByteString -> True
-  Default.ConsByteString -> True
-  Default.IndexByteString -> True
-  Default.EqualsByteString -> True
-  Default.LessThanByteString -> True
-  Default.LessThanEqualsByteString -> True
-  Default.VerifySignature -> True
-  Default.AppendString -> True
-  Default.EqualsString -> True
-  Default.ChooseUnit -> True
-  Default.Trace -> True
-  Default.MkCons -> True
-  Default.ConstrData -> True
-  Default.EqualsData -> True
-  Default.MkPairData -> True
-  _ -> False
+-- this would be illegal to implement as join
+-- because it doesn't (and I think can't)
+-- agree with the applicative instance
+illegalJoin :: WhnfRes (WhnfRes a) -> WhnfRes a
+illegalJoin Err = Err
+illegalJoin Unclear = Unclear
+illegalJoin (Success x) = x
+
+--safe2Arg :: DefaultFun -> Bool
+--safe2Arg = \case
+--  Default.AddInteger -> True
+--  Default.SubtractInteger -> True
+--  Default.MultiplyInteger -> True
+--  Default.EqualsInteger -> True
+--  Default.LessThanInteger -> True
+--  Default.LessThanEqualsInteger -> True
+--  Default.AppendByteString -> True
+--  Default.ConsByteString -> True
+--  Default.IndexByteString -> True
+--  Default.EqualsByteString -> True
+--  Default.LessThanByteString -> True
+--  Default.LessThanEqualsByteString -> True
+--  Default.VerifySignature -> True
+--  Default.AppendString -> True
+--  Default.EqualsString -> True
+--  Default.ChooseUnit -> True
+--  Default.Trace -> True
+--  Default.MkCons -> True
+--  Default.ConstrData -> True
+--  Default.EqualsData -> True
+--  Default.MkPairData -> True
+--  _ -> False
 
 subTerms :: NTerm -> [(Scope, NTerm)]
 subTerms t =
@@ -211,8 +272,8 @@ weakEquiv' = curry $ \case
   (l, r)
     | l == r -> return (l, 1, [])
     | otherwise -> do
-      guard $ whnf l == Success
-      guard $ whnf r == Success
+      guard $ succeds l
+      guard $ succeds r
       holeName <- newName
       return (Var () holeName, 1, [holeName])
 
@@ -253,7 +314,7 @@ withTemplate templateName (template, holes) = completeRecM $ \target -> do
   return $ do
     mapArgs <- margs
     let args = M.elems mapArgs
-    guard $ all (== Success) (whnf <$> args)
+    guard $ all succeds args
     return $ applyArgs (Var () templateName) args
 
 findHoles :: [Name] -> NTerm -> NTerm -> ScopeM (Maybe (Map Name NTerm))

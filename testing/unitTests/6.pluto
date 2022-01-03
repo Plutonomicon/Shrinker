@@ -1,0 +1,21 @@
+--Apply
+--  ()
+--  (LamAbs
+--     ()
+--     DeBruijn { dbnIndex = 0 }
+--     (Constant () (Some (ValueOf integer (-100000000000)))))
+--  (Apply
+--     ()
+--     (Apply
+--        ()
+--        (Builtin () AddInteger)
+--        (Constant () (Some (ValueOf integer (-100000000000)))))
+--     (Constant () (Some (ValueOf bytestring ""))))
+-- Broken by subs
+
+--(\V-0->-100000000000) (((AddInteger) (-100000000000)) (""))
+-- reduced to -10000000000
+
+-- solution should be
+-- whnf needs to check args are int like for addInteger
+(\x -> ()) (0 +i "")

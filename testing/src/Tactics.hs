@@ -2,6 +2,7 @@ module Tactics (
   shrinkingTactics,
   testTacticOn,
   run,
+  prettyPrintTerm,
   Similar ((~=)),
 ) where
 
@@ -58,6 +59,8 @@ instance Similar Result where
 instance Similar (UPLC.Term Name DefaultUni DefaultFun ()) where
   (~=) = curry $ \case
     (UPLC.Var () _, UPLC.Var () _) -> True
+    (UPLC.Force _ (UPLC.Delay _ a),b) -> a ~= b
+    (a,UPLC.Force _ (UPLC.Delay _ b)) -> a ~= b
     (UPLC.Force () a, UPLC.Force () b) -> a ~= b
     (UPLC.Delay () a, UPLC.Delay () b) -> a ~= b
     (UPLC.Apply () _ _, _) -> True
@@ -66,8 +69,6 @@ instance Similar (UPLC.Term Name DefaultUni DefaultFun ()) where
     (UPLC.Builtin () a, UPLC.Builtin () b) -> a == b
     (UPLC.Constant () a, UPLC.Constant () b) -> a == b
     (UPLC.Error (), UPLC.Error ()) -> True
-    (UPLC.Force _ (UPLC.Delay _ a),b) -> a ~= b
-    (a,UPLC.Force _ (UPLC.Delay _ b)) -> a ~= b
     _ -> False
 
 (~/=) :: Similar a => a -> a -> Bool

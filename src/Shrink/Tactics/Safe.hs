@@ -54,7 +54,7 @@ removeDeadCode = completeRec $ \case
   -- subName' is used because name colision is intended in this case
   (Apply _ (LamAbs _ name term) val) ->
     case whnf val of
-      Success ->
+      Success () ->
         if mentions name term
           then Nothing
           else Just term

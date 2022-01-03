@@ -12,6 +12,10 @@ module Shrink.Types (
   ShrinkParams (..),
   WhnfRes (..),
   MonadScope,
+  SimpleType (..),
+  (-->),
+  MaybeTraceTerm,
+  Trace,
 ) where
 
 import Control.Monad.Reader (MonadReader, ReaderT)
@@ -60,8 +64,37 @@ data ShrinkParams = ShrinkParams
 -- automatically add the name to the name of the
 -- property test
 
-data WhnfRes = Err | Unclear | Success deriving (Eq, Ord)
+data WhnfRes a = Err | Unclear | Success a deriving (Eq, Ord, Functor)
+
+instance Applicative WhnfRes where
+  pure = Success
+  Err <*> _ = Err
+  _ <*> Err = Err
+  Unclear <*> _ = Unclear
+  _ <*> Unclear = Unclear
+  (Success f) <*> (Success x) = Success $ f x
+
+data SimpleType 
+  = UnclearType 
+  | Integer 
+  | String 
+  | ByteString 
+  | Data 
+  | Unit
+  | Bool
+  | Arr SimpleType SimpleType
+  | List SimpleType
+  | Delayed SimpleType
+  deriving (Eq, Ord)
+
+infixr -->
+(-->) :: SimpleType -> SimpleType -> SimpleType
+(-->) = Arr
 
 class (MonadReader (Scope, Scope) m, MonadState Integer m) => MonadScope m
 
 instance Monad m => MonadScope (ScopeMT m)
+
+type Trace = [(String,Int)]
+
+type MaybeTraceTerm = (NTerm,Maybe Trace)
