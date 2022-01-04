@@ -80,6 +80,7 @@ library
     , bytestring                   
     , hedgehog
     , plutus-core
+    , plutus-ledger-api
     , shrinker
     , tasty
     , tasty-hedgehog

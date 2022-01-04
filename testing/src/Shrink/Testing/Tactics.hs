@@ -10,6 +10,9 @@ module Shrink.Testing.Tactics (
 import Shrink (defaultShrinkParams, size)
 import Shrink.Names (dTermToN)
 import Shrink.Types (NTerm, SafeTactic, Tactic, safeTactics, tactics)
+import Shrink.Testing.Gen (genUplc)
+
+import Data.Function (on)
 
 import Hedgehog (MonadTest, annotate, assert, failure, forAll, property, success)
 import Test.Tasty (TestTree, testGroup)
@@ -22,9 +25,9 @@ import PlutusCore.Evaluation.Machine.ExBudget (
  )
 import PlutusCore.Evaluation.Machine.ExMemory (ExCPU (), ExMemory ())
 import PlutusCore.Name (Name)
+import Plutus.V1.Ledger.Scripts (Script (Script))
 import UntypedPlutusCore.Evaluation.Machine.Cek (CekEvaluationException, RestrictingSt (RestrictingSt), restricting, runCekNoEmit)
 
-import Shrink.Testing.Gen (genUplc)
 
 import PlutusCore qualified as PLC
 import UntypedPlutusCore.Core.Type qualified as UPLC
@@ -83,6 +86,16 @@ instance Similar (UPLC.Term Name DefaultUni DefaultFun ()) where
     (UPLC.Constant () a, UPLC.Constant () b) -> a == b
     (UPLC.Error (), UPLC.Error ()) -> True
     _ -> False
+
+
+instance Similar (UPLC.Term PLC.DeBruijn DefaultUni DefaultFun ()) where
+  (~=) = (~=) `on` dTermToN
+
+instance Similar (UPLC.Program PLC.DeBruijn DefaultUni DefaultFun ()) where
+  (UPLC.Program () vl tl) ~= (UPLC.Program () vr tr) = vl == vr && tl ~= tr
+
+instance Similar Script where
+  (Script pl) ~= (Script pr) = pl ~= pr
 
 (~/=) :: Similar a => a -> a -> Bool
 a ~/= b = not $ a ~= b
