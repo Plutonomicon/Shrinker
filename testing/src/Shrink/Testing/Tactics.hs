@@ -1,9 +1,10 @@
-module Tactics (
+module Shrink.Testing.Tactics (
   shrinkingTactics,
   testTacticOn,
   run,
   prettyPrintTerm,
   Similar ((~=)),
+  (~/=),
 ) where
 
 import Shrink (defaultShrinkParams, size)
@@ -23,7 +24,7 @@ import PlutusCore.Evaluation.Machine.ExMemory (ExCPU (), ExMemory ())
 import PlutusCore.Name (Name)
 import UntypedPlutusCore.Evaluation.Machine.Cek (CekEvaluationException, RestrictingSt (RestrictingSt), restricting, runCekNoEmit)
 
-import Gen (genUplc)
+import Shrink.Testing.Gen (genUplc)
 
 import PlutusCore qualified as PLC
 import UntypedPlutusCore.Core.Type qualified as UPLC
@@ -59,12 +60,24 @@ instance Similar Result where
 instance Similar (UPLC.Term Name DefaultUni DefaultFun ()) where
   (~=) = curry $ \case
     (UPLC.Var () _, UPLC.Var () _) -> True
+
+    -- I don't love this clause but there are equivelent terms where this seems to be the best you can do
+    -- ie. !((\x -> #()) ()) is equivelent to ()
+    (UPLC.Force _ (UPLC.Apply{}),_) -> True
+    (_,UPLC.Force _ (UPLC.Apply{})) -> True
+
+    (UPLC.Force _ (UPLC.Delay _ a),UPLC.Force _ b) -> a ~= UPLC.Force () b || UPLC.Delay () a ~= b
+    (UPLC.Force _ a,UPLC.Force _ (UPLC.Delay _ b)) -> a ~= UPLC.Delay () b || UPLC.Force () a ~= b
+
     (UPLC.Force _ (UPLC.Delay _ a),b) -> a ~= b
     (a,UPLC.Force _ (UPLC.Delay _ b)) -> a ~= b
+
     (UPLC.Force () a, UPLC.Force () b) -> a ~= b
     (UPLC.Delay () a, UPLC.Delay () b) -> a ~= b
+
     (UPLC.Apply () _ _, _) -> True
     (_, UPLC.Apply () _ _) -> True
+
     (UPLC.LamAbs () _ _, UPLC.LamAbs () _ _) -> True
     (UPLC.Builtin () a, UPLC.Builtin () b) -> a == b
     (UPLC.Constant () a, UPLC.Constant () b) -> a == b

@@ -73,8 +73,8 @@ common common-lang
 library
   import: common-lang
   exposed-modules:
-    Gen
-    Tactics
+    Shrink.Testing.Gen
+    Shrink.Testing.Tactics
   build-depends:
     , base
     , bytestring                   

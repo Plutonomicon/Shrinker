@@ -3,7 +3,7 @@ module Main (main) where
 import Test.Tasty (defaultMain, localOption, testGroup)
 import Test.Tasty.Hedgehog (HedgehogTestLimit (HedgehogTestLimit))
 
-import Tactics (shrinkingTactics)
+import Shrink.Testing.Tactics (shrinkingTactics)
 
 main :: IO ()
 main = do

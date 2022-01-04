@@ -1,4 +1,4 @@
-module Gen (
+module Shrink.Testing.Gen (
   genUplc,
 ) where
 

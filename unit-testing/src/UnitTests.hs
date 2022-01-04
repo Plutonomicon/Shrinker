@@ -2,7 +2,7 @@ module UnitTests (makeUnitTests) where
 
 import Paths_shrinker_unit_testing (getDataFileName)
 
-import Tactics (Similar ((~=)) ,(~/=), run, testTacticOn, prettyPrintTerm)
+import Shrink.Testing.Tactics (Similar ((~=)) ,(~/=), run, testTacticOn, prettyPrintTerm)
 
 import Shrink (defaultShrinkParams, shrinkDTerm, traceShrinkDTerm)
 import Shrink.Names (dTermToN)
