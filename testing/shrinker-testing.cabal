@@ -13,8 +13,6 @@ copyright:          TODO
 category:           TODO
 build-type:         Simple
 tested-with:        GHC ==8.10.4
-data-files:
-  ./unitTests/*.pluto
 
 source-repository head
   type:     git
@@ -29,6 +27,7 @@ common common-lang
     -Wincomplete-uni-patterns -Wredundant-constraints -Werror
     -Wmissing-import-lists
     -Wmissing-export-lists
+    -Wunused-packages
     -fobject-code -fno-ignore-interface-pragmas
     -fno-omit-interface-pragmas -fplugin=RecordDotPreprocessor
 
@@ -74,55 +73,29 @@ common common-lang
 library
   import: common-lang
   exposed-modules:
-    Gen 
+    Gen
     Tactics
   build-depends:
-    , shrinker
     , base
     , bytestring                   
-    , directory
-    , either
     , hedgehog
-    , pluto
     , plutus-core
-    , plutus-ledger-api
-    , plutus-tx
-    , QuickCheck
-    , quickcheck-instances
-    , serialise
+    , shrinker
     , tasty
     , tasty-hedgehog
-    , tasty-quickcheck
     , text                         
   hs-source-dirs: src
 
-test-suite shriker-tests
+test-suite shrinker-testing
   import:         common-lang 
   type:           exitcode-stdio-1.0
   main-is:        Spec.hs
   other-modules:
-    UnitTests
-    Paths_shrinker_testing
   build-depends:
-    , shrinker
-    , shrinker-testing
     , base
-    , bytestring                   
-    , directory
-    , either
-    , filepath
-    , hedgehog
-    , pluto
-    , plutus-core
-    , plutus-ledger-api
-    , plutus-tx
-    , QuickCheck
-    , quickcheck-instances
-    , serialise
+    , shrinker-testing
     , tasty
     , tasty-hedgehog
-    , tasty-quickcheck
-    , text                         
 
   hs-source-dirs: spec
 

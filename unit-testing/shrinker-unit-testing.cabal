@@ -1,8 +1,8 @@
 cabal-version:      3.0
-name:               shrinker-tx
+name:               shrinker-unit-testing
 version:            0.1
 synopsis:           TODO
-description:        Tools for optimizing plutus-tx scripts
+description:        Tools for optimizing uplc script sizes
 homepage:           https://github.com/Geometer1729/Shrinker
 bug-reports:        https://github.com/Geometer1729/Shrinker
 license:
@@ -13,6 +13,8 @@ copyright:          TODO
 category:           TODO
 build-type:         Simple
 tested-with:        GHC ==8.10.4
+data-files:
+  ./unitTests/*.pluto
 
 source-repository head
   type:     git
@@ -70,21 +72,37 @@ common common-lang
 
   default-language:   Haskell2010
 
--- Libraries
-
-library 
+library
   import: common-lang
   exposed-modules:
-    Shrink.PlutusTX
-    Shrink.PlutusTXTH
+    UnitTests
+  other-modules:
+    Paths_shrinker_unit_testing
   build-depends:
-    , bytestring
+    , base
+    , directory
+    , filepath
+    , hedgehog
+    , pluto
     , plutus-core
     , plutus-ledger-api
-    , plutus-tx
-    , serialise
     , shrinker
-    , template-haskell
+    , shrinker-testing
+    , tasty
+    , tasty-hedgehog
+    , text                         
   hs-source-dirs: src
+
+test-suite shriker-unit-testing
+  import:         common-lang 
+  type:           exitcode-stdio-1.0
+  main-is:        Spec.hs
+  build-depends:
+    , base
+    , shrinker-unit-testing
+    , tasty
+    , tasty-hedgehog
+
+  hs-source-dirs: spec
 
 

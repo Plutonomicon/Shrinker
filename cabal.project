@@ -4,6 +4,7 @@ packages:
   ./.
   ./shrinker-tx
   ./testing
+  ./unit-testing
 
 -- You never, ever, want this.
 write-ghc-environment-files: never

@@ -27,7 +27,8 @@ common common-lang
   ghc-options:
     -Wall -Wcompat -Wincomplete-record-updates
     -Wincomplete-uni-patterns -Wredundant-constraints -Werror
-    ---Wmissing-import-lists
+    -Wmissing-import-lists
+    -Wunused-packages
     -Wmissing-export-lists
     -fobject-code -fno-ignore-interface-pragmas
     -fno-omit-interface-pragmas -fplugin=RecordDotPreprocessor
@@ -86,11 +87,9 @@ library
     Shrink.Tactics.Util
   build-depends:
     , containers
-    , plutus-ledger-api
     , mtl
     , plutus-core
-    , prettyprinter
+    , plutus-ledger-api
     , text                
-    , vector             
   hs-source-dirs:  src
 
