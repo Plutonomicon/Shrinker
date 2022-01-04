@@ -51,4 +51,10 @@ It reduces `fst (x,_)` to `x` and `fst (_,y)` to `y`. It's required to make curr
 
 #### Clean Force Delay 
 
-Clean Force Delay is a simple tactic that removes delays which are imediately forced, ie `!#()` becomes `()` to use pluto syntax
+Clean Force Delay is a simple tactic that removes delays which are imediately forced.
+ie `!#()` becomes `()` to use pluto syntax.
+
+#### Promote Errors
+
+Promote Errors looks for terms which will always error and replaces them with Error. 
+ie `1 + Error` becomes `Error`

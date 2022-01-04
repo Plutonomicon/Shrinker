@@ -69,6 +69,9 @@ instance Similar (UPLC.Term Name DefaultUni DefaultFun ()) where
     (UPLC.Force _ (UPLC.Apply{}),_) -> True
     (_,UPLC.Force _ (UPLC.Apply{})) -> True
 
+    (UPLC.Force{},UPLC.Error{}) -> True
+    (UPLC.Error{},UPLC.Force{}) -> True
+
     (UPLC.Force _ (UPLC.Delay _ a),UPLC.Force _ b) -> a ~= UPLC.Force () b || UPLC.Delay () a ~= b
     (UPLC.Force _ a,UPLC.Force _ (UPLC.Delay _ b)) -> a ~= UPLC.Delay () b || UPLC.Force () a ~= b
 

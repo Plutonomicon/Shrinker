@@ -11,7 +11,7 @@ import PlutusCore.Default (DefaultFun (FstPair, MkPairData, SndPair))
 import UntypedPlutusCore.Core.Type (Term (Apply, Builtin, Error, LamAbs, Var,Force, Delay))
 
 safeTactList :: [(String, SafeTactic)]
-safeTactList = [("removeDeadCode", removeDeadCode), ("cleanPairs", cleanPairs),("cleanForceDelay",cleanForceDelay)]
+safeTactList = [("removeDeadCode", removeDeadCode), ("cleanPairs", cleanPairs),("cleanForceDelay",cleanForceDelay),("promoteErrors",promoteErrors)]
 
 cleanPairs :: SafeTactic
 cleanPairs = completeRec $ \case
@@ -69,3 +69,10 @@ cleanForceDelay = completeRec $ \case
                    Delay _ t' -> Just t'
                    t' -> Just $ Force () t'
   _ -> Nothing
+
+promoteErrors :: SafeTactic
+promoteErrors = completeRec $ \case
+  Error () -> Nothing
+  t -> case whnf t of
+         Err -> Just $ Error ()
+         _ -> Nothing
