@@ -2,7 +2,7 @@ module UnitTests (makeUnitTests) where
 
 import Paths_shrinker_unit_testing (getDataFileName)
 
-import Tactics (Similar ((~=)), run, testTacticOn, prettyPrintTerm)
+import Tactics (Similar ((~=)) ,(~/=), run, testTacticOn, prettyPrintTerm)
 
 import Shrink (defaultShrinkParams, shrinkDTerm, traceShrinkDTerm)
 import Shrink.Names (dTermToN)
@@ -12,7 +12,7 @@ import Control.Arrow (second)
 import Control.Monad (filterM, when, (>=>))
 import Data.Either (rights,isRight)
 import Data.Functor ((<&>))
-import Data.List (isInfixOf,sort)
+import Data.List (isInfixOf,sort,find)
 import Data.Text (pack)
 import Hedgehog (MonadTest, annotate, assert, failure, property, success)
 import System.Directory (doesFileExist, listDirectory)
@@ -87,16 +87,23 @@ fullTest (name, uplc) = testProperty ("full test of shrink on " ++ name) . prope
 
 findCulprit :: DTerm -> (NTerm,String,Int)
 findCulprit uplc = let
-  (_end,trace) = traceShrinkDTerm uplc
-    in findCulprit' (dTermToN uplc) (reverse trace)
+  (end,trace) = traceShrinkDTerm uplc
+                    in if run (dTermToN uplc) ~= run (dTermToN end)
+                          then error "trace doesn't break uplc"
+                          else case findCulprit' (dTermToN uplc) (reverse trace) of
+                                 Just culprit -> culprit
+                                 Nothing -> error $ "failed to find break in: " ++ show (reverse trace) 
 
-findCulprit' :: NTerm -> Trace -> (NTerm,String,Int)
-findCulprit' _ [] = error "find culprit exhausted the trace without any errors, could be a non-transitivity issue"
-findCulprit' uplc (nextStep@(tact,ind):trace) = let
-  next = stepTrace nextStep uplc
-    in if run uplc ~= run next 
-          then findCulprit' next trace
-          else (uplc,tact,ind)
+findCulprit' :: NTerm -> Trace -> Maybe (NTerm,String,Int)
+findCulprit' term trace = let
+  steps = genSteps term trace
+  originalRes = run term
+    in case find (\(step,_) -> run step ~/= originalRes) (zip (tail steps) trace) of
+         Just (broken,(tact,ind))-> Just (broken,tact,ind)
+         Nothing -> Nothing
+
+genSteps :: NTerm -> Trace -> [NTerm]
+genSteps = scanl (flip stepTrace)
 
 stepTrace :: (String,Int) -> NTerm -> NTerm
 stepTrace (tactName,ind) term = 
