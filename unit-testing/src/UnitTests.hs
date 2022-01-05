@@ -40,13 +40,20 @@ makeUnitTests = do
   let uplcs' = rights uplcs''
       uplcs = [(name, uplc) | (name, Script (Program _ _ uplc)) <- uplcs']
   return $
-    testGroup "Unit tests" $
-      [ testProperty "unit-tests compile" . property $ do
-        annotate $ show uplc
-        assert $ isRight uplc
-      | uplc <- uplcs'' ] ++
-      (fullTest <$> uplcs) ++
-        ( do
+    testGroup "Unit tests" 
+      [ testGroup "unit-tests compile" 
+        [ testProperty "unit-tests compile" . property $ do
+          annotate $ show uplc
+          assert $ isRight uplc
+          | uplc <- uplcs'' ] 
+      , testGroup "tactics are unit tested"
+        [ testProperty (name ++ " has unit tests") . property $ do
+          annotate name 
+          assert $ any (('/':name) `isInfixOf`) (fst <$> uplcs)
+        | name <- (fst <$> tactics defaultShrinkParams) ++ (fst <$> safeTactics defaultShrinkParams) ]
+      , testGroup "full tests"
+          (fullTest <$> uplcs) 
+      , testGroup "single-tactic unit tests" $ do
             (name, uplc) <- uplcs
             (tactName, tact) <-
               [Safe, Unsafe] >>= \case
@@ -56,7 +63,7 @@ makeUnitTests = do
               testProperty ("testing " ++ tactName ++ " on " ++ name) . property $ do
                 when (('/' : tactName) `isInfixOf` name) $ testNonTrivial tact (dTermToN uplc)
                 testTacticOn tactName tact (dTermToN uplc)
-         )
+      ]
 
 testNonTrivial :: MonadTest m => Tactic -> NTerm -> m ()
 testNonTrivial tact term = case tact term of
