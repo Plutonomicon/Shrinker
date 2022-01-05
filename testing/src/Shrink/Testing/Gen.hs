@@ -78,10 +78,10 @@ genUplc' depth level =
 genConstant :: RecursionDepth -> Gen (Some (ValueOf DefaultUni))
 genConstant depth =
   choice
-    [ Some . ValueOf PLC.DefaultUniInteger <$> genInteger
+    [ Some . ValueOf PLC.DefaultUniUnit <$> mempty
+    , Some . ValueOf PLC.DefaultUniInteger <$> genInteger
     , Some . ValueOf PLC.DefaultUniByteString <$> genByteString
     , Some . ValueOf PLC.DefaultUniString <$> genText
-    , Some . ValueOf PLC.DefaultUniUnit <$> mempty
     , Some . ValueOf PLC.DefaultUniBool <$> choice (return <$> [True, False])
     , Some . ValueOf PLC.DefaultUniData <$> genData depth
     ]
