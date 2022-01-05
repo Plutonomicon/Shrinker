@@ -10,5 +10,5 @@ main = do
   defaultMain $
     testGroup
       "shrinker tests"
-      [ localOption (HedgehogTestLimit (Just 1000)) shrinkingTactics
+      [ localOption (HedgehogTestLimit (Just 1_000_000)) 
       ]

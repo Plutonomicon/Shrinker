@@ -28,6 +28,7 @@ common common-lang
     -Wmissing-import-lists
     -Wmissing-export-lists
     -Wunused-packages
+    -threaded
     -fobject-code -fno-ignore-interface-pragmas
     -fno-omit-interface-pragmas -fplugin=RecordDotPreprocessor
 
