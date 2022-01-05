@@ -9,8 +9,8 @@ module Shrink.Testing.Tactics (
 
 import Shrink (defaultShrinkParams, size)
 import Shrink.Names (dTermToN)
-import Shrink.Types (NTerm, SafeTactic, Tactic, safeTactics, tactics)
 import Shrink.Testing.Gen (genUplc)
+import Shrink.Types (NTerm, SafeTactic, Tactic, safeTactics, tactics)
 
 import Data.Function (on)
 
@@ -18,6 +18,7 @@ import Hedgehog (MonadTest, annotate, assert, failure, forAll, property, success
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Hedgehog (testProperty)
 
+import Plutus.V1.Ledger.Scripts (Script (Script))
 import PlutusCore.Default (DefaultFun, DefaultUni)
 import PlutusCore.Evaluation.Machine.ExBudget (
   ExBudget (ExBudget, exBudgetCPU, exBudgetMemory),
@@ -25,9 +26,7 @@ import PlutusCore.Evaluation.Machine.ExBudget (
  )
 import PlutusCore.Evaluation.Machine.ExMemory (ExCPU (), ExMemory ())
 import PlutusCore.Name (Name)
-import Plutus.V1.Ledger.Scripts (Script (Script))
 import UntypedPlutusCore.Evaluation.Machine.Cek (CekEvaluationException, RestrictingSt (RestrictingSt), restricting, runCekNoEmit)
-
 
 import PlutusCore qualified as PLC
 import UntypedPlutusCore.Core.Type qualified as UPLC
@@ -63,28 +62,23 @@ instance Similar Result where
 instance Similar (UPLC.Term Name DefaultUni DefaultFun ()) where
   (~=) = curry $ \case
     (UPLC.Var () _, UPLC.Var () _) -> True
-
-    -- I don't love this clause but there are 
-    -- equivelent terms where this seems to be the best 
+    -- I don't love this clause but there are
+    -- equivelent terms where this seems to be the best
     -- you can reasonably do
     -- !((\x -> #()) ()) == ()
     -- !(!(#(#()))) == ()
     -- !() == Error
     -- nearly anything in a force can be nearly anthing
-    (UPLC.Force{},_) -> True
-    (_,UPLC.Force{}) -> True
-
+    (UPLC.Force {}, _) -> True
+    (_, UPLC.Force {}) -> True
     (UPLC.Delay () a, UPLC.Delay () b) -> a ~= b
-
     (UPLC.Apply () _ _, _) -> True
     (_, UPLC.Apply () _ _) -> True
-
     (UPLC.LamAbs () _ _, UPLC.LamAbs () _ _) -> True
     (UPLC.Builtin () a, UPLC.Builtin () b) -> a == b
     (UPLC.Constant () a, UPLC.Constant () b) -> a == b
     (UPLC.Error (), UPLC.Error ()) -> True
     _ -> False
-
 
 instance Similar (UPLC.Term PLC.DeBruijn DefaultUni DefaultFun ()) where
   (~=) = (~=) `on` dTermToN

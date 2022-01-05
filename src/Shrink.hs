@@ -12,10 +12,10 @@ module Shrink (
 import Shrink.Names (dTermToN, nTermToD)
 import Shrink.Tactics.Safe (safeTactList)
 import Shrink.Tactics.Tactics (tactList)
-import Shrink.Types (Tactic,SafeTactic,MaybeTraceTerm,Trace,DProgram, DTerm, NTerm, ShrinkParams (ShrinkParams, extraSteps, parallelTactics, parallelTerms, safeTactics, tactics))
+import Shrink.Types (DProgram, DTerm, MaybeTraceTerm, NTerm, SafeTactic, ShrinkParams (ShrinkParams, extraSteps, parallelTactics, parallelTerms, safeTactics, tactics), Tactic, Trace)
 
+import Control.Arrow (first, second)
 import Control.Monad (replicateM)
-import Control.Arrow (first,second)
 import Data.Function (on)
 import Data.List (groupBy, sortOn)
 import Plutus.V1.Ledger.Scripts (Script (Script), scriptSize)
@@ -34,7 +34,7 @@ shrinkProgramSp sp (Program _ version term) = Program () version (shrinkDTermSp 
 shrinkDTerm :: DTerm -> DTerm
 shrinkDTerm = shrinkDTermSp defaultShrinkParams
 
-traceShrinkDTerm :: DTerm -> (DTerm,Trace)
+traceShrinkDTerm :: DTerm -> (DTerm, Trace)
 traceShrinkDTerm = traceShrinkDTermSp defaultShrinkParams
 
 shrinkDTermSp :: ShrinkParams -> DTerm -> DTerm
@@ -43,15 +43,18 @@ shrinkDTermSp sp = nTermToD . shrinkNTermSp sp . dTermToN
 shrinkNTermSp :: ShrinkParams -> NTerm -> NTerm
 shrinkNTermSp sp = fst . shrinkMTraceTermSp sp . (,Nothing)
 
-traceShrinkDTermSp :: ShrinkParams -> DTerm -> (DTerm,Trace)
+traceShrinkDTermSp :: ShrinkParams -> DTerm -> (DTerm, Trace)
 traceShrinkDTermSp sp = first nTermToD . traceShrinkNTermSp sp . dTermToN
 
-traceShrinkNTermSp :: ShrinkParams -> NTerm -> (NTerm,Trace)
-traceShrinkNTermSp sp =  second 
-  (\case
-    Just t -> t
-    Nothing -> error "pretty sure this is unreachable but trace was dumped"
-  ) . shrinkMTraceTermSp sp . (,Just []) 
+traceShrinkNTermSp :: ShrinkParams -> NTerm -> (NTerm, Trace)
+traceShrinkNTermSp sp =
+  second
+    ( \case
+        Just t -> t
+        Nothing -> error "pretty sure this is unreachable but trace was dumped"
+    )
+    . shrinkMTraceTermSp sp
+    . (,Just [])
 
 shrinkMTraceTermSp :: ShrinkParams -> MaybeTraceTerm -> MaybeTraceTerm
 shrinkMTraceTermSp sp = runShrink (extraSteps sp) sp . return
@@ -102,11 +105,11 @@ withoutTactics ts =
     , tactics = filter (\(tn, _) -> tn `notElem` ts) (tactics defaultShrinkParams)
     }
 
-appSafe :: (String,SafeTactic) -> MaybeTraceTerm -> MaybeTraceTerm
-appSafe (name,tact) (term,mtrace) = (tact term,((name,0):) <$> mtrace)
+appSafe :: (String, SafeTactic) -> MaybeTraceTerm -> MaybeTraceTerm
+appSafe (name, tact) (term, mtrace) = (tact term, ((name, 0) :) <$> mtrace)
 
-appTact :: (String,Tactic) -> MaybeTraceTerm -> [MaybeTraceTerm]
-appTact (name,tact) (term,mtrace) = [ (term',((name,i):)<$> mtrace) 
-                                    | (term',i) <- zip (tact term) [0..] ]
-
-
+appTact :: (String, Tactic) -> MaybeTraceTerm -> [MaybeTraceTerm]
+appTact (name, tact) (term, mtrace) =
+  [ (term', ((name, i) :) <$> mtrace)
+  | (term', i) <- zip (tact term) [0 ..]
+  ]

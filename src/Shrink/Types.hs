@@ -74,12 +74,12 @@ instance Applicative WhnfRes where
   _ <*> Unclear = Unclear
   (Success f) <*> (Success x) = Success $ f x
 
-data SimpleType 
-  = UnclearType 
-  | Integer 
-  | String 
-  | ByteString 
-  | Data 
+data SimpleType
+  = UnclearType
+  | Integer
+  | String
+  | ByteString
+  | Data
   | Unit
   | Bool
   | Arr SimpleType SimpleType
@@ -87,7 +87,7 @@ data SimpleType
   | Delayed SimpleType
   deriving (Eq, Ord)
 
-infixr -->
+infixr 9 -->
 (-->) :: SimpleType -> SimpleType -> SimpleType
 (-->) = Arr
 
@@ -95,6 +95,6 @@ class (MonadReader (Scope, Scope) m, MonadState Integer m) => MonadScope m
 
 instance Monad m => MonadScope (ScopeMT m)
 
-type Trace = [(String,Int)]
+type Trace = [(String, Int)]
 
-type MaybeTraceTerm = (NTerm,Maybe Trace)
+type MaybeTraceTerm = (NTerm, Maybe Trace)

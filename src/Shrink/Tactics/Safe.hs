@@ -2,16 +2,16 @@ module Shrink.Tactics.Safe (
   safeTactList,
 ) where
 
-import Shrink.Tactics.Util (completeRec, mentions, subName', whnf, isData)
+import Shrink.Tactics.Util (completeRec, isData, mentions, subName', whnf)
 import Shrink.Types (SafeTactic, WhnfRes (Err, Success, Unclear))
 
-import Control.Monad(guard)
+import Control.Monad (guard)
 
 import PlutusCore.Default (DefaultFun (FstPair, MkPairData, SndPair))
-import UntypedPlutusCore.Core.Type (Term (Apply, Builtin, Error, LamAbs, Var,Force, Delay))
+import UntypedPlutusCore.Core.Type (Term (Apply, Builtin, Delay, Error, Force, LamAbs, Var))
 
 safeTactList :: [(String, SafeTactic)]
-safeTactList = [("removeDeadCode", removeDeadCode), ("cleanPairs", cleanPairs),("cleanForceDelay",cleanForceDelay),("promoteErrors",promoteErrors)]
+safeTactList = [("removeDeadCode", removeDeadCode), ("cleanPairs", cleanPairs), ("cleanForceDelay", cleanForceDelay), ("promoteErrors", promoteErrors)]
 
 cleanPairs :: SafeTactic
 cleanPairs = completeRec $ \case
@@ -27,9 +27,9 @@ cleanPairs = completeRec $ \case
           )
         sndTerm
       ) -> do
-        guard $ isData fstTerm
-        guard $ isData sndTerm
-        return $ Delay () $ Delay () $ cleanPairs fstTerm
+      guard $ isData fstTerm
+      guard $ isData sndTerm
+      return $ Delay () $ Delay () $ cleanPairs fstTerm
   Apply
     _
     (Builtin _ SndPair)
@@ -66,13 +66,13 @@ cleanForceDelay :: SafeTactic
 cleanForceDelay = completeRec $ \case
   (Force _ (Delay _ t)) -> Just t
   (Force _ t) -> case cleanForceDelay t of
-                   Delay _ t' -> Just t'
-                   t' -> Just $ Force () t'
+    Delay _ t' -> Just t'
+    t' -> Just $ Force () t'
   _ -> Nothing
 
 promoteErrors :: SafeTactic
 promoteErrors = completeRec $ \case
   Error () -> Nothing
   t -> case whnf t of
-         Err -> Just $ Error ()
-         _ -> Nothing
+    Err -> Just $ Error ()
+    _ -> Nothing

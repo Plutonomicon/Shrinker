@@ -3,7 +3,7 @@ module Shrink.Tactics.Tactics (
 ) where
 
 import Shrink.ScopeM (liftScope, newName)
-import Shrink.Tactics.Util (appBind, completeTactic, equiv, makeLambs, sepMaybe, subTerms, unsub, weakEquiv, whnf, withTemplate, succeds)
+import Shrink.Tactics.Util (appBind, completeTactic, equiv, makeLambs, sepMaybe, subTerms, succeds, unsub, weakEquiv, whnf, withTemplate)
 import Shrink.Types (Tactic, WhnfRes (Err, Success, Unclear))
 
 import Control.Monad (guard)

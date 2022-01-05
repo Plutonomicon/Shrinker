@@ -21,18 +21,20 @@ module Shrink.Tactics.Util (
 ) where
 
 import Shrink.ScopeM (newName, runScopedTact)
-import Shrink.Types (MonadScope, NTerm, PartialTactic, Scope, ScopeM, ScopeMT, ScopedTactic, Tactic, WhnfRes (Err, Success, Unclear),SimpleType(UnclearType,Arr,Delayed,Integer,String,ByteString,Unit,Bool,Data,List),(-->))
+import Shrink.Types (MonadScope, NTerm, PartialTactic, Scope, ScopeM, ScopeMT, ScopedTactic, SimpleType (Arr, Bool, ByteString, Data, Delayed, Integer, List, String, UnclearType, Unit), Tactic, WhnfRes (Err, Success, Unclear), (-->))
+
 --import Shrink.Types (MonadScope, NTerm, PartialTactic, Scope, ScopeM, ScopeMT, ScopedTactic, Tactic, WhnfRes (Err, Success, Unclear),SimpleType(UnclearType,Integer,String,ByteString,Data,Arr))
 
-import Control.Arrow (first, second)
 import Control.Applicative (liftA2)
+import Control.Arrow (first, second)
 import Control.Monad (guard, join, liftM2)
 import Control.Monad.Reader (MonadReader, ask, local, runReaderT)
 import Control.Monad.State (get, put, runStateT)
-import Data.Functor ((<&>),($>))
+import Data.Functor (($>), (<&>))
 import Data.Functor.Identity (Identity (Identity), runIdentity)
 import Data.Map (Map)
 import Data.Maybe (fromMaybe)
+
 --import PlutusCore.Default (DefaultFun)
 import UntypedPlutusCore (Name)
 import UntypedPlutusCore.Core.Type (Term (Apply, Builtin, Constant, Delay, Error, Force, LamAbs, Var))
@@ -114,39 +116,45 @@ whnf' 0 = const Unclear
 whnf' n =
   let rec = whnf' (n -1)
    in \case
-        -- TODO: keep track of local binds in scopeM 
+        -- TODO: keep track of local binds in scopeM
         -- and variable types clear when possible
         Var {} -> Success UnclearType
-        -- TODO: add polymorphism to 
-        -- simple types so lambdas can be typed 
+        -- TODO: add polymorphism to
+        -- simple types so lambdas can be typed
         LamAbs {} -> Success UnclearType
         Apply _ (LamAbs _ name lTerm) valTerm -> rec valTerm *> rec (appBind name valTerm lTerm)
-        Apply _ fTerm xTerm -> let
-          f = rec fTerm
-          x = rec xTerm 
-            in illegalJoin $ liftA2 (curry (\case
-                (Arr xt yt,xt')
-                  | xt == xt' -> pure yt
-                  | xt  == UnclearType -> Unclear
-                  | xt' == UnclearType -> Unclear
-                  | otherwise  -> Err
-                  -- this case being when xt and xt' are both clear but still different
-                  -- which will always result in a type error
-                (UnclearType,_) -> Unclear
-                (_,_) -> Err 
-                -- f type is clear and not a function
-                -- must be a type error
-                                         )) f x 
+        Apply _ fTerm xTerm ->
+          let f = rec fTerm
+              x = rec xTerm
+           in illegalJoin $
+                liftA2
+                  ( curry
+                      ( \case
+                          (Arr xt yt, xt')
+                            | xt == xt' -> pure yt
+                            | xt == UnclearType -> Unclear
+                            | xt' == UnclearType -> Unclear
+                            | otherwise -> Err
+                          -- this case being when xt and xt' are both clear but still different
+                          -- which will always result in a type error
+                          (UnclearType, _) -> Unclear
+                          (_, _) -> Err
+                          -- f type is clear and not a function
+                          -- must be a type error
+                      )
+                  )
+                  f
+                  x
         Force _ (Delay _ term) -> rec term
         Force _ t -> case rec t of
-                       Success (Delayed t') -> Success t'
-                       Success UnclearType -> Unclear
-                       Success _ -> Err
-                       r -> r
+          Success (Delayed t') -> Success t'
+          Success UnclearType -> Unclear
+          Success _ -> Err
+          r -> r
         Delay _ t -> case rec t of
-                        Success t' -> Success (Delayed t')
-                        _ -> Success UnclearType
-        Constant _ c -> Success $ 
+          Success t' -> Success (Delayed t')
+          _ -> Success UnclearType
+        Constant _ c -> Success $
           case c of
             Default.Some (Default.ValueOf Default.DefaultUniInteger _) -> Integer
             Default.Some (Default.ValueOf Default.DefaultUniString _) -> String
@@ -155,32 +163,31 @@ whnf' n =
             Default.Some (Default.ValueOf Default.DefaultUniBool _) -> Bool
             Default.Some (Default.ValueOf Default.DefaultUniData _) -> Data
             _ -> UnclearType
-        Builtin _ b -> Success $
-          let 
-              bin x = x --> x --> x
-              binInt = bin Integer
-              comp x = x --> x --> Bool
-              compInts = comp Integer
-              compBS = comp ByteString
-          in
-          case b of
-            Default.AddInteger -> binInt
-            Default.SubtractInteger -> binInt
-            Default.MultiplyInteger -> binInt 
-            Default.EqualsInteger -> compInts 
-            Default.LessThanInteger -> compInts
-            Default.LessThanEqualsInteger -> compInts
-            Default.AppendByteString -> bin ByteString 
-            Default.ConsByteString -> Integer --> ByteString --> ByteString
-            Default.EqualsByteString -> compBS
-            Default.LessThanByteString -> compBS
-            Default.LessThanEqualsByteString -> compBS
-            Default.VerifySignature -> ByteString --> ByteString --> ByteString --> String
-            Default.AppendString -> bin String
-            Default.EqualsString -> comp String
-            Default.ConstrData -> Integer --> List Data --> Data
-            Default.EqualsData -> comp Data
-            _ -> UnclearType
+        Builtin _ b ->
+          Success $
+            let bin x = x --> x --> x
+                binInt = bin Integer
+                comp x = x --> x --> Bool
+                compInts = comp Integer
+                compBS = comp ByteString
+             in case b of
+                  Default.AddInteger -> binInt
+                  Default.SubtractInteger -> binInt
+                  Default.MultiplyInteger -> binInt
+                  Default.EqualsInteger -> compInts
+                  Default.LessThanInteger -> compInts
+                  Default.LessThanEqualsInteger -> compInts
+                  Default.AppendByteString -> bin ByteString
+                  Default.ConsByteString -> Integer --> ByteString --> ByteString
+                  Default.EqualsByteString -> compBS
+                  Default.LessThanByteString -> compBS
+                  Default.LessThanEqualsByteString -> compBS
+                  Default.VerifySignature -> ByteString --> ByteString --> ByteString --> String
+                  Default.AppendString -> bin String
+                  Default.EqualsString -> comp String
+                  Default.ConstrData -> Integer --> List Data --> Data
+                  Default.EqualsData -> comp Data
+                  _ -> UnclearType
         Error {} -> Err
 
 -- this would be illegal to implement as join
