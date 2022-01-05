@@ -64,21 +64,16 @@ instance Similar (UPLC.Term Name DefaultUni DefaultFun ()) where
   (~=) = curry $ \case
     (UPLC.Var () _, UPLC.Var () _) -> True
 
-    -- I don't love this clause but there are equivelent terms where this seems to be the best you can do
-    -- ie. !((\x -> #()) ()) is equivelent to ()
-    (UPLC.Force _ (UPLC.Apply{}),_) -> True
-    (_,UPLC.Force _ (UPLC.Apply{})) -> True
+    -- I don't love this clause but there are 
+    -- equivelent terms where this seems to be the best 
+    -- you can reasonably do
+    -- !((\x -> #()) ()) == ()
+    -- !(!(#(#()))) == ()
+    -- !() == Error
+    -- nearly anything in a force can be nearly anthing
+    (UPLC.Force{},_) -> True
+    (_,UPLC.Force{}) -> True
 
-    (UPLC.Force{},UPLC.Error{}) -> True
-    (UPLC.Error{},UPLC.Force{}) -> True
-
-    (UPLC.Force _ (UPLC.Delay _ a),UPLC.Force _ b) -> a ~= UPLC.Force () b || UPLC.Delay () a ~= b
-    (UPLC.Force _ a,UPLC.Force _ (UPLC.Delay _ b)) -> a ~= UPLC.Delay () b || UPLC.Force () a ~= b
-
-    (UPLC.Force _ (UPLC.Delay _ a),b) -> a ~= b
-    (a,UPLC.Force _ (UPLC.Delay _ b)) -> a ~= b
-
-    (UPLC.Force () a, UPLC.Force () b) -> a ~= b
     (UPLC.Delay () a, UPLC.Delay () b) -> a ~= b
 
     (UPLC.Apply () _ _, _) -> True
