@@ -1,0 +1,55 @@
+-- This is a toy example: the field of rational numbers (most likely broken).
+let
+  fix = (\f -> (\x -> f (\v -> x x v)) (\x -> f (\v -> x x v)));
+  apply = (\a b -> b a);
+
+  -- scott encoding
+  tuple = (\a b -> (\c -> c a b));
+  fst = apply (\a b -> a);
+  snd = apply (\a b -> b);
+
+  i_signum = (\a -> if a <i 0 then -1 else if 0 <i a then 1 else 0);
+  i_neg = (\i -> -1 *i i);
+  i_abs = (\x -> if x <i 0 then i_neg x else x);
+  i_min = (\a b -> if a <i b then a else b);
+  i_max = (\a b -> if a <i b then b else a);
+  gcd = fix
+          (\gcd a b ->
+             let
+               _a = i_abs a;
+               _b = i_abs b;
+               c = i_min _a _b;
+               d = i_max _a _b
+             in (if c ==i 0 then d else gcd c (d %i c))
+          );
+
+  over = tuple;
+  num = fst;
+  denom = snd;
+
+  normSigns = (\x -> let a = num x; b = denom x in (a *i i_signum b) `over` (i_abs b));
+  norm = (\x0 -> let x1 = normSigns x0; a = num x1; b = denom x1; g = gcd a b
+                 in (a /i g) `over` (b /i g));
+
+  plus = ( \x y ->
+           ( let a = num x;
+                 b = denom x;
+                 c = num y;
+                 d = denom y
+             in norm (((a *i d) +i (b *i c)) `over` (b *i d))
+           )
+         );
+  times = ( \x y ->
+            ( let a = num x;
+                  b = denom x;
+                  c = num y;
+                  d = denom y
+              in norm ((a *i c) `over` (b *i d))
+            )
+          );
+  zero = 0 `over` 1;
+  one = 1 `over` 1;
+  negate = (\x -> i_neg (num x) `over` denom x);
+  reciprocal = (\x -> let a = num x; b = denom x in (b *i i_signum a) `over` i_abs a)
+in
+  plus `tuple` ( times `tuple` ( negate `tuple` ( reciprocal `tuple` ( one `tuple` ( zero `tuple` NullList ) ) ) ) )
