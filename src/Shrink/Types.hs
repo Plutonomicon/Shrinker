@@ -16,6 +16,7 @@ module Shrink.Types (
   (-->),
   MaybeTraceTerm,
   Trace,
+  PartialSafe,
 ) where
 
 import Control.Monad.Reader (MonadReader, ReaderT)
@@ -49,6 +50,8 @@ type Tactic = NTerm -> [NTerm]
 -- reservered for the original term
 type PartialTactic = NTerm -> ScopeM (Maybe [NTerm])
 type ScopedTactic = NTerm -> ScopeM [NTerm]
+
+type PartialSafe = NTerm -> ScopeM (Maybe NTerm)
 
 --type ScopedSafe    = NTerm -> ScopeM NTerm
 

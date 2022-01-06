@@ -15,19 +15,20 @@ module Shrink.Tactics.Util (
   whnf,
   subName',
   completeRec,
+  completeRecM,
   appBind,
   isData,
   succeds,
+  completeSafeTactic,
 ) where
 
 import Shrink.ScopeM (newName, runScopedTact)
-import Shrink.Types (MonadScope, NTerm, PartialTactic, Scope, ScopeM, ScopeMT, ScopedTactic, SimpleType (Arr, Bool, ByteString, Data, Delayed, Integer, List, String, UnclearType, Unit), Tactic, WhnfRes (Err, Success, Unclear), (-->))
-
---import Shrink.Types (MonadScope, NTerm, PartialTactic, Scope, ScopeM, ScopeMT, ScopedTactic, Tactic, WhnfRes (Err, Success, Unclear),SimpleType(UnclearType,Integer,String,ByteString,Data,Arr))
+import Shrink.Types (SafeTactic,PartialSafe,MonadScope, NTerm, PartialTactic, Scope, ScopeM, ScopeMT, ScopedTactic, SimpleType (Arr, Bool, ByteString, Data, Delayed, Integer, List, String, UnclearType, Unit), Tactic, WhnfRes (Err, Success, Unclear), (-->))
 
 import Control.Applicative (liftA2)
 import Control.Arrow (first, second)
 import Control.Monad (guard, join, liftM2)
+import Control.Monad.Trans (lift)
 import Control.Monad.Reader (MonadReader, ask, local, runReaderT)
 import Control.Monad.State (get, put, runStateT)
 import Data.Functor (($>), (<&>))
@@ -105,28 +106,34 @@ mentions name = \case
   Delay _ term -> mentions name term
   _ -> False
 
-succeds :: NTerm -> Bool
-succeds t = whnf t == Success ()
+succeds :: MonadScope m => NTerm -> m Bool
+succeds t = whnf t <&> (== Success ())
 
-whnf :: NTerm -> WhnfRes ()
-whnf t = whnf' 100 t $> ()
+whnf :: MonadScope m => NTerm -> m (WhnfRes ())
+whnf t = whnfT t <&> ($> ())
 
-whnf' :: Integer -> NTerm -> WhnfRes SimpleType
-whnf' 0 = const Unclear
+whnfT :: MonadScope m => NTerm -> m (WhnfRes SimpleType)
+whnfT = whnf' 100
+
+whnf' :: MonadScope m => Integer -> NTerm -> m (WhnfRes SimpleType)
+whnf' 0 = const $ return Unclear
 whnf' n =
   let rec = whnf' (n -1)
    in \case
         -- TODO: keep track of local binds in scopeM
         -- and variable types clear when possible
-        Var {} -> Success UnclearType
+        Var {} -> return $ Success UnclearType
         -- TODO: add polymorphism to
         -- simple types so lambdas can be typed
-        LamAbs {} -> Success UnclearType
-        Apply _ (LamAbs _ name lTerm) valTerm -> rec valTerm *> rec (appBind name valTerm lTerm)
+        LamAbs {} -> return $ Success UnclearType
+        Apply _ (LamAbs _ name lTerm) valTerm -> liftM2 (*>) (rec valTerm) (rec $ appBind name valTerm lTerm)
         Apply _ fTerm xTerm ->
-          let f = rec fTerm
-              x = rec xTerm
-           in illegalJoin $
+          let f' = rec fTerm
+              x' = rec xTerm
+           in do
+             f <- f'
+             x <- x'
+             return $ illegalJoin $
                 liftA2
                   ( curry
                       ( \case
@@ -146,15 +153,18 @@ whnf' n =
                   f
                   x
         Force _ (Delay _ term) -> rec term
-        Force _ t -> case rec t of
-          Success (Delayed t') -> Success t'
+        Force _ t -> rec t <&> \case 
+          Success (Delayed t') -> Success t' 
           Success UnclearType -> Unclear
           Success _ -> Err
           r -> r
-        Delay _ t -> case rec t of
+        Delay _ t -> rec t <&> \case 
           Success t' -> Success (Delayed t')
-          _ -> Success UnclearType
-        Constant _ c -> Success $
+          _ -> Success UnclearType 
+          -- I think this is correct 
+          -- with the way Force Delayed is handled 
+          -- but there should probably be a DellayErr type to make this stronger
+        Constant _ c -> return $ Success $
           case c of
             Default.Some (Default.ValueOf Default.DefaultUniInteger _) -> Integer
             Default.Some (Default.ValueOf Default.DefaultUniString _) -> String
@@ -164,7 +174,7 @@ whnf' n =
             Default.Some (Default.ValueOf Default.DefaultUniData _) -> Data
             _ -> UnclearType
         Builtin _ b ->
-          Success $
+          return $ Success $
             let bin x = x --> x --> x
                 binInt = bin Integer
                 comp x = x --> x --> Bool
@@ -188,7 +198,7 @@ whnf' n =
                   Default.ConstrData -> Integer --> List Data --> Data
                   Default.EqualsData -> comp Data
                   _ -> UnclearType
-        Error {} -> Err
+        Error {} -> return Err
 
 -- this would be illegal to implement as join
 -- because it doesn't (and I think can't)
@@ -279,8 +289,8 @@ weakEquiv' = curry $ \case
   (l, r)
     | l == r -> return (l, 1, [])
     | otherwise -> do
-      guard $ succeds l
-      guard $ succeds r
+      guard =<< succeds l
+      guard =<< succeds r
       holeName <- newName
       return (Var () holeName, 1, [holeName])
 
@@ -318,10 +328,10 @@ makeLambs = flip $ foldr (LamAbs ())
 withTemplate :: Name -> (NTerm, [Name]) -> NTerm -> ScopeM NTerm
 withTemplate templateName (template, holes) = completeRecM $ \target -> do
   margs <- findHoles holes template target
-  return $ do
-    mapArgs <- margs
+  sepMaybe $ do
+    mapArgs <- lift . lift $ margs
     let args = M.elems mapArgs
-    guard $ all succeds args
+    guard . and =<< mapM succeds args 
     return $ applyArgs (Var () templateName) args
 
 findHoles :: [Name] -> NTerm -> NTerm -> ScopeM (Maybe (Map Name NTerm))
@@ -354,10 +364,13 @@ applyArgs :: NTerm -> [NTerm] -> NTerm
 applyArgs = foldl (Apply ())
 
 -- is data may have false negatives but not false positives
-isData :: NTerm -> Bool
-isData (Apply _ (Builtin _ Default.IData) _) = True
-isData (Apply _ (Builtin _ Default.BData) _) = True
-isData (Apply _ (Builtin _ Default.ConstrData) _) = True
-isData (Apply _ (Builtin _ Default.MapData) _) = True
-isData (Apply _ (Builtin _ Default.ListData) _) = True
-isData _ = False
+isData :: MonadScope m => NTerm -> m Bool
+isData (Apply _ (Builtin _ Default.IData) _) = return True
+isData (Apply _ (Builtin _ Default.BData) _) = return True
+isData (Apply _ (Builtin _ Default.ConstrData) _) = return True
+isData (Apply _ (Builtin _ Default.MapData) _) = return True
+isData (Apply _ (Builtin _ Default.ListData) _) = return True
+isData t = whnfT t <&> (== Success Data)
+
+completeSafeTactic :: PartialSafe -> SafeTactic
+completeSafeTactic = runScopedTact . completeRecM

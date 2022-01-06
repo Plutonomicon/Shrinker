@@ -2,10 +2,12 @@ module Shrink.Tactics.Safe (
   safeTactList,
 ) where
 
-import Shrink.Tactics.Util (completeRec, isData, mentions, subName', whnf)
+import Shrink.Tactics.Util (completeSafeTactic, completeRec, isData, mentions, subName', whnf, sepMaybe)
 import Shrink.Types (SafeTactic, WhnfRes (Err, Success, Unclear))
 
 import Control.Monad (guard)
+import Control.Monad.Trans (lift)
+import Data.Functor ((<&>))
 
 import PlutusCore.Default (DefaultFun (FstPair, MkPairData, SndPair))
 import UntypedPlutusCore.Core.Type (Term (Apply, Builtin, Delay, Error, Force, LamAbs, Var))
@@ -14,10 +16,10 @@ safeTactList :: [(String, SafeTactic)]
 safeTactList = [("removeDeadCode", removeDeadCode), ("cleanPairs", cleanPairs), ("cleanForceDelay", cleanForceDelay), ("promoteErrors", promoteErrors)]
 
 cleanPairs :: SafeTactic
-cleanPairs = completeRec $ \case
+cleanPairs = completeSafeTactic $ \case
   Apply
     _
-    (Builtin _ FstPair)
+    (Builtin _ b)
     ( Apply
         _
         ( Apply
@@ -26,41 +28,29 @@ cleanPairs = completeRec $ \case
             fstTerm
           )
         sndTerm
-      ) -> do
-      guard $ isData fstTerm
-      guard $ isData sndTerm
-      return $ Delay () $ Delay () $ cleanPairs fstTerm
-  Apply
-    _
-    (Builtin _ SndPair)
-    ( Apply
-        _
-        ( Apply
-            _
-            (Builtin _ MkPairData)
-            fstTerm
-          )
-        sndTerm
-      ) -> do
-      guard $ isData fstTerm
-      guard $ isData sndTerm
-      return $ Delay () $ Delay () $ cleanPairs sndTerm
-  _ -> Nothing
+      ) -> sepMaybe $ do
+      guard =<< isData fstTerm
+      guard =<< isData sndTerm
+      case b of
+        FstPair -> return $ Delay () $ Delay () $ cleanPairs fstTerm
+        SndPair -> return $ Delay () $ Delay () $ cleanPairs sndTerm
+        _ -> lift . lift $ Nothing
+  _ -> return Nothing
 
 removeDeadCode :: SafeTactic
-removeDeadCode = completeRec $ \case
+removeDeadCode = completeSafeTactic $ \case
   (Apply _ (LamAbs _ name term) (Var _ name')) ->
-    Just $ subName' name name' term
+    return $ Just $ subName' name name' term
   -- subName' is used because name colision is intended in this case
   (Apply _ (LamAbs _ name term) val) ->
-    case whnf val of
+    whnf val <&> \case 
       Success () ->
         if mentions name term
           then Nothing
           else Just term
       Unclear -> Nothing
       Err -> Just $ Error ()
-  _ -> Nothing
+  _ -> return Nothing
 
 cleanForceDelay :: SafeTactic
 cleanForceDelay = completeRec $ \case
@@ -71,8 +61,8 @@ cleanForceDelay = completeRec $ \case
   _ -> Nothing
 
 promoteErrors :: SafeTactic
-promoteErrors = completeRec $ \case
-  Error () -> Nothing
-  t -> case whnf t of
+promoteErrors = completeSafeTactic $ \case
+  Error () -> return Nothing
+  t -> whnf t <&> \case
     Err -> Just $ Error ()
     _ -> Nothing
