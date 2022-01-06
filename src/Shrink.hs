@@ -12,7 +12,7 @@ module Shrink (
 import Shrink.Names (dTermToN, nTermToD)
 import Shrink.Tactics.Safe (safeTactList)
 import Shrink.Tactics.Tactics (tactList)
-import Shrink.Types (DProgram, DTerm, MaybeTraceTerm, NTerm, SafeTactic, ShrinkParams (ShrinkParams, extraSteps, parallelTactics, parallelTerms, safeTactics, tactics), Tactic, Trace)
+import Shrink.Types
 
 import Control.Arrow (first, second)
 import Control.Monad (replicateM)

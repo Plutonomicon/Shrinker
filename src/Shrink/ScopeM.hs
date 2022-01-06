@@ -6,9 +6,11 @@ module Shrink.ScopeM (
   newName,
 ) where
 
-import Shrink.Types (MonadScope, NTerm, Scope, ScopeM, ScopeMT)
+import Shrink.Types (MonadScope, NTerm, ScopeM, ScopeMT)
 
+import Data.Map qualified as M
 import Data.Set qualified as S
+import Data.Set (Set)
 
 import Control.Monad.Reader (ask, runReaderT)
 import Control.Monad.State (evalStateT, get, modify, put, runState)
@@ -20,14 +22,14 @@ import UntypedPlutusCore.Core.Type (Term (Apply, Delay, Force, LamAbs, Var))
 
 runScopeMT :: Monad m => NTerm -> ScopeMT m a -> m a
 runScopeMT nt smtma =
-  let globalScope = usedScope nt
-      free = fromIntegral $ 1 + maximum (0 : (unUnique . nameUnique <$> S.toList globalScope))
-   in evalStateT (runReaderT smtma (globalScope, S.empty)) free
+  let nameSpace = usedScope nt
+      free = fromIntegral $ 1 + maximum (0 : (unUnique . nameUnique <$> S.toList nameSpace))
+   in evalStateT (runReaderT smtma M.empty) free
 
 runScopeM :: NTerm -> ScopeM a -> a
 runScopeM nt = runIdentity . runScopeMT nt
 
-usedScope :: NTerm -> Scope
+usedScope :: NTerm -> Set Name
 usedScope = \case
   Var _ n -> S.singleton n
   LamAbs _ n t -> S.insert n (usedScope t)

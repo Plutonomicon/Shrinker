@@ -17,11 +17,13 @@ module Shrink.Types (
   MaybeTraceTerm,
   Trace,
   PartialSafe,
+  NameSpace,
 ) where
 
 import Control.Monad.Reader (MonadReader, ReaderT)
 import Control.Monad.State (MonadState, State, StateT)
 
+import Data.Map (Map)
 import Data.Set (Set)
 import PlutusCore.DeBruijn (DeBruijn)
 import PlutusCore.Default (DefaultFun, DefaultUni)
@@ -32,9 +34,10 @@ type DTerm = Term DeBruijn DefaultUni DefaultFun ()
 type NTerm = Term Name DefaultUni DefaultFun ()
 type DProgram = Program DeBruijn DefaultUni DefaultFun ()
 
-type ScopeMT m = ReaderT (Scope, Scope) (StateT Integer m)
-type ScopeM = ReaderT (Scope, Scope) (State Integer)
-type Scope = Set Name
+type ScopeMT m = ReaderT Scope (StateT Integer m)
+type ScopeM = ReaderT Scope (State Integer)
+type Scope = Map Name NTerm
+type NameSpace = Set Name
 
 type SafeTactic = NTerm -> NTerm
 
@@ -94,7 +97,7 @@ infixr 9 -->
 (-->) :: SimpleType -> SimpleType -> SimpleType
 (-->) = Arr
 
-class (MonadReader (Scope, Scope) m, MonadState Integer m) => MonadScope m
+class (MonadReader Scope m, MonadState Integer m) => MonadScope m
 
 instance Monad m => MonadScope (ScopeMT m)
 

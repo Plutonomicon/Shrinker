@@ -15,7 +15,6 @@ module Shrink.Tactics.Util (
   whnf,
   subName',
   completeRec,
-  completeRecM,
   appBind,
   isData,
   succeds,
@@ -23,20 +22,18 @@ module Shrink.Tactics.Util (
 ) where
 
 import Shrink.ScopeM (newName, runScopedTact)
-import Shrink.Types (MonadScope, NTerm, PartialSafe, PartialTactic, SafeTactic, Scope, ScopeM, ScopeMT, ScopedTactic, SimpleType (Arr, Bool, ByteString, Data, Delayed, Integer, List, String, UnclearType, Unit), Tactic, WhnfRes (Err, Success, Unclear), (-->))
+import Shrink.Types
 
+import Control.Arrow (first)
 import Control.Applicative (liftA2)
-import Control.Arrow (first, second)
 import Control.Monad (guard, join, liftM2)
 import Control.Monad.Reader (MonadReader, ask, local, runReaderT)
 import Control.Monad.State (get, put, runStateT)
 import Control.Monad.Trans (lift)
 import Data.Functor (($>), (<&>))
-import Data.Functor.Identity (Identity (Identity), runIdentity)
 import Data.Map (Map)
 import Data.Maybe (fromMaybe)
 
---import PlutusCore.Default (DefaultFun)
 import UntypedPlutusCore (Name)
 import UntypedPlutusCore.Core.Type (Term (Apply, Builtin, Constant, Delay, Error, Force, LamAbs, Var))
 
@@ -54,35 +51,52 @@ completeTactic' pt term = do
   descend st term <&> (++ extras)
 
 descend :: ScopedTactic -> ScopedTactic
-descend tact = \case
+descend st = \case
+  Apply _ lam@(LamAbs _ name _) arg -> do
+    lamTerms <- addNameToScope name arg $ st lam
+    argTerms <- st arg
+    return $
+      Apply () lam arg :
+      [ Apply () lam' arg | lam' <- drop 1 lamTerms ]
+      ++ [ Apply () lam arg' | arg' <- drop 1 argTerms ]
   Var _ name -> return [Var () name]
-  LamAbs _ name term -> fmap (LamAbs () name) <$> addNameToScope name (tact term)
+  LamAbs _ name term -> fmap (LamAbs () name) <$> st term
   Apply _ funTerm varTerm -> do
-    funTerms <- tact funTerm
-    varTerms <- tact varTerm
+    funTerms <- st funTerm
+    varTerms <- st varTerm
     return $
       Apply () funTerm varTerm :
       [Apply () funTerm' varTerm | funTerm' <- drop 1 funTerms]
       ++ [Apply () funTerm varTerm' | varTerm' <- drop 1 varTerms]
-  Force _ term -> fmap (Force ()) <$> tact term
-  Delay _ term -> fmap (Delay ()) <$> tact term
+  Force _ term -> fmap (Force ()) <$> st term
+  Delay _ term -> fmap (Delay ()) <$> st term
   Constant _ val -> return [Constant () val]
   Builtin _ fun -> return [Builtin () fun]
   Error _ -> return [Error ()]
 
-addNameToScope :: MonadReader (Scope, Scope) m => Name -> m a -> m a
-addNameToScope name = local $ second (S.insert name)
+addNameToScope :: MonadReader Scope m => Name -> NTerm -> m a -> m a
+addNameToScope name val = local (M.insert name val)
 
 completeRec :: (NTerm -> Maybe NTerm) -> NTerm -> NTerm
-completeRec partial = runIdentity . completeRecM (Identity . partial)
+completeRec partial originalTerm = let
+  rec = completeRec partial 
+  in case partial originalTerm of 
+    Just t -> t 
+    Nothing -> case originalTerm of
+      LamAbs _ name term -> LamAbs () name (rec term)
+      Apply _ f x -> Apply () (rec f) (rec x)
+      Force _ term -> Force () (rec term)
+      Delay _ term -> Delay () (rec term)
+      term -> term
 
-completeRecM :: Monad m => (NTerm -> m (Maybe NTerm)) -> NTerm -> m NTerm
-completeRecM partial originalTerm =
-  let rec = completeRecM partial
+completeRecScopeM :: MonadScope m => (NTerm -> m (Maybe NTerm)) -> NTerm -> m NTerm
+completeRecScopeM partial originalTerm =
+  let rec = completeRecScopeM partial
    in partial originalTerm >>= \case
         Just term -> return term
         Nothing ->
           case originalTerm of
+            Apply _ (LamAbs _ name term) arg -> Apply () <$> (LamAbs () name <$> addNameToScope name arg (rec term) ) <*> rec arg
             LamAbs _ name term -> LamAbs () name <$> rec term
             Apply _ f x -> Apply () <$> rec f <*> rec x
             Force _ term -> Force () <$> rec term
@@ -120,9 +134,11 @@ whnf' 0 = const $ return Unclear
 whnf' n =
   let rec = whnf' (n -1)
    in \case
-        -- TODO: keep track of local binds in scopeM
-        -- and variable types clear when possible
-        Var {} -> return $ Success UnclearType
+        Var _ name -> do
+          scope <- ask
+          case M.lookup name scope of
+            Just val -> rec val
+            Nothing -> return $ Success UnclearType
         -- TODO: add polymorphism to
         -- simple types so lambdas can be typed
         LamAbs {} -> return $ Success UnclearType
@@ -213,32 +229,7 @@ illegalJoin Err = Err
 illegalJoin Unclear = Unclear
 illegalJoin (Success x) = x
 
---safe2Arg :: DefaultFun -> Bool
---safe2Arg = \case
---  Default.AddInteger -> True
---  Default.SubtractInteger -> True
---  Default.MultiplyInteger -> True
---  Default.EqualsInteger -> True
---  Default.LessThanInteger -> True
---  Default.LessThanEqualsInteger -> True
---  Default.AppendByteString -> True
---  Default.ConsByteString -> True
---  Default.IndexByteString -> True
---  Default.EqualsByteString -> True
---  Default.LessThanByteString -> True
---  Default.LessThanEqualsByteString -> True
---  Default.VerifySignature -> True
---  Default.AppendString -> True
---  Default.EqualsString -> True
---  Default.ChooseUnit -> True
---  Default.Trace -> True
---  Default.MkCons -> True
---  Default.ConstrData -> True
---  Default.EqualsData -> True
---  Default.MkPairData -> True
---  _ -> False
-
-subTerms :: NTerm -> [(Scope, NTerm)]
+subTerms :: NTerm -> [(NameSpace, NTerm)]
 subTerms t =
   (S.empty, t) : case t of
     LamAbs _ n term -> first (S.insert n) <$> subTerms term
@@ -256,19 +247,19 @@ unsub replacing replaceWith = completeRec $ \case
     | term == replacing -> Just $ Var () replaceWith
   _ -> Nothing
 
-equiv :: (Scope, NTerm) -> (Scope, NTerm) -> Bool
-equiv (lscope, lterm) (rscope, rterm) =
-  not (uses lscope lterm)
-    && not (uses rscope rterm)
+equiv :: (NameSpace, NTerm) -> (NameSpace, NTerm) -> Bool
+equiv (lnsp, lterm) (rnsp, rterm) =
+  not (uses lnsp lterm)
+    && not (uses rnsp rterm)
     && lterm == rterm
 
 -- compares two (scoped) terms and maybe returns a template
 -- the number of nodes of the template and the holes in the template
-weakEquiv :: (Scope, NTerm) -> (Scope, NTerm) -> ScopeMT Maybe (NTerm, Integer, [Name])
-weakEquiv (lscope, lterm) (rscope, rterm) = do
+weakEquiv :: (NameSpace, NTerm) -> (NameSpace, NTerm) -> ScopeMT Maybe (NTerm, Integer, [Name])
+weakEquiv (lnsp, lterm) (rnsp, rterm) = do
   -- ensure that unshared scope is not used
-  guard $ not (uses lscope lterm)
-  guard $ not (uses rscope rterm)
+  guard $ not (uses lnsp lterm)
+  guard $ not (uses rnsp rterm)
   weakEquiv' lterm rterm
 
 weakEquiv' :: NTerm -> NTerm -> ScopeMT Maybe (NTerm, Integer, [Name])
@@ -310,7 +301,7 @@ subName' replace replaceWith = completeRec $ \case
   Var _ n -> Just $ Var () (if n == replace then replaceWith else n)
   _ -> Nothing
 
-uses :: Scope -> NTerm -> Bool
+uses :: NameSpace -> NTerm -> Bool
 uses s = \case
   Apply _ f x -> uses s f || uses s x
   Delay _ t -> uses s t
@@ -331,7 +322,7 @@ makeLambs :: [Name] -> NTerm -> NTerm
 makeLambs = flip $ foldr (LamAbs ())
 
 withTemplate :: Name -> (NTerm, [Name]) -> NTerm -> ScopeM NTerm
-withTemplate templateName (template, holes) = completeRecM $ \target -> do
+withTemplate templateName (template, holes) = completeRecScopeM $ \target -> do
   margs <- findHoles holes template target
   sepMaybe $ do
     mapArgs <- lift . lift $ margs
@@ -378,4 +369,4 @@ isData (Apply _ (Builtin _ Default.ListData) _) = return True
 isData t = whnfT t <&> (== Success Data)
 
 completeSafeTactic :: PartialSafe -> SafeTactic
-completeSafeTactic = runScopedTact . completeRecM
+completeSafeTactic = runScopedTact . completeRecScopeM

@@ -12,11 +12,11 @@ import Control.Arrow (second)
 import Control.Monad (filterM, when, (>=>))
 import Data.Either (isRight, rights)
 import Data.Functor ((<&>))
-import Data.List (find, isInfixOf, sort)
+import Data.List (find, isPrefixOf, sort)
 import Data.Text (pack)
 import Hedgehog (MonadTest, annotate, assert, failure, property, success)
 import System.Directory (doesFileExist, listDirectory)
-import System.FilePath ((</>))
+import System.FilePath ((</>),takeFileName)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Hedgehog (testProperty)
 import UntypedPlutusCore.Core.Type (Program (Program))
@@ -53,7 +53,7 @@ makeUnitTests = do
           "tactics are unit tested"
           [ testProperty (name ++ " has unit tests") . property $ do
             annotate name
-            assert $ any (('/' : name) `isInfixOf`) (fst <$> uplcs)
+            assert $ any (name `isPrefixOf`) (takeFileName . fst <$> uplcs)
           | name <- (fst <$> tactics defaultShrinkParams) ++ (fst <$> safeTactics defaultShrinkParams)
           ]
       , testGroup
@@ -66,8 +66,8 @@ makeUnitTests = do
               Unsafe -> tactics defaultShrinkParams
               Safe -> safeTactics defaultShrinkParams <&> second (return .)
           return $
-            testProperty ("testing " ++ tactName ++ " on " ++ name) . property $ do
-              when (('/' : tactName) `isInfixOf` name) $ testNonTrivial tact (dTermToN uplc)
+            testProperty ("testing " ++ tactName ++ " on " ++ takeFileName name) . property $ do
+              when (tactName `isPrefixOf` takeFileName name) $ testNonTrivial tact (dTermToN uplc)
               testTacticOn tactName tact (dTermToN uplc)
       ]
 
@@ -82,7 +82,7 @@ testNonTrivial tact term = case tact term of
   (_ : _) -> success
 
 fullTest :: (String, DTerm) -> TestTree
-fullTest (name, uplc) = testProperty ("full test of shrink on " ++ name) . property $ do
+fullTest (name, uplc) = testProperty ("full test of shrink on " ++ takeFileName name) . property $ do
   let uplc' = shrinkDTerm uplc
       start = dTermToN uplc
       end = dTermToN uplc'
