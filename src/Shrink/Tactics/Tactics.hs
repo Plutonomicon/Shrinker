@@ -6,7 +6,7 @@ import Shrink.ScopeM (liftScope, newName)
 import Shrink.Tactics.Util (appBind, completeTactic, equiv, makeLambs, sepMaybe, subTerms, succeds, unsub, weakEquiv, whnf, withTemplate)
 import Shrink.Types (Tactic, WhnfRes (Err, Success, Unclear))
 
-import Control.Monad (guard,liftM2)
+import Control.Monad (guard, liftM2)
 import Data.Functor ((<&>))
 import Data.Maybe (catMaybes)
 
@@ -24,11 +24,11 @@ tactList =
 subs :: Tactic
 subs = completeTactic $ \case
   Apply _ (LamAbs _ name funTerm) varTerm ->
-    whnf varTerm <&> \case 
+    whnf varTerm <&> \case
       Success () -> Just [appBind name varTerm funTerm]
       Unclear -> Nothing
       Err -> Just [Error ()]
-  _ -> return Nothing 
+  _ -> return Nothing
 
 weakUnsubs :: Tactic
 weakUnsubs = completeTactic $ \case
@@ -41,22 +41,23 @@ weakUnsubs = completeTactic $ \case
           guard $ fSubterm `equiv` vSubterm
           --TODO rewrite this to be more readable
           return $
-            liftM2 (*>) 
-            (guard <$> succeds (snd fSubterm))
-            ( do
-                name <- newName
-                let funTerm' = unsub (snd fSubterm) name funTerm
-                    varTerm' = unsub (snd vSubterm) name varTerm
-                return . Just $
-                  Apply
-                    ()
-                    ( LamAbs
-                        ()
-                        name
-                        (Apply () funTerm' varTerm')
-                    )
-                    (snd fSubterm)
-                                                   ) 
+            liftM2
+              (*>)
+              (guard <$> succeds (snd fSubterm))
+              ( do
+                  name <- newName
+                  let funTerm' = unsub (snd fSubterm) name funTerm
+                      varTerm' = unsub (snd vSubterm) name varTerm
+                  return . Just $
+                    Apply
+                      ()
+                      ( LamAbs
+                          ()
+                          name
+                          (Apply () funTerm' varTerm')
+                      )
+                      (snd fSubterm)
+              )
   _ -> return Nothing
 
 strongUnsubs :: Tactic

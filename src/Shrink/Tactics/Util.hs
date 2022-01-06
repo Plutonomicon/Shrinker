@@ -23,14 +23,14 @@ module Shrink.Tactics.Util (
 ) where
 
 import Shrink.ScopeM (newName, runScopedTact)
-import Shrink.Types (SafeTactic,PartialSafe,MonadScope, NTerm, PartialTactic, Scope, ScopeM, ScopeMT, ScopedTactic, SimpleType (Arr, Bool, ByteString, Data, Delayed, Integer, List, String, UnclearType, Unit), Tactic, WhnfRes (Err, Success, Unclear), (-->))
+import Shrink.Types (MonadScope, NTerm, PartialSafe, PartialTactic, SafeTactic, Scope, ScopeM, ScopeMT, ScopedTactic, SimpleType (Arr, Bool, ByteString, Data, Delayed, Integer, List, String, UnclearType, Unit), Tactic, WhnfRes (Err, Success, Unclear), (-->))
 
 import Control.Applicative (liftA2)
 import Control.Arrow (first, second)
 import Control.Monad (guard, join, liftM2)
-import Control.Monad.Trans (lift)
 import Control.Monad.Reader (MonadReader, ask, local, runReaderT)
 import Control.Monad.State (get, put, runStateT)
+import Control.Monad.Trans (lift)
 import Data.Functor (($>), (<&>))
 import Data.Functor.Identity (Identity (Identity), runIdentity)
 import Data.Map (Map)
@@ -131,73 +131,78 @@ whnf' n =
           let f' = rec fTerm
               x' = rec xTerm
            in do
-             f <- f'
-             x <- x'
-             return $ illegalJoin $
-                liftA2
-                  ( curry
-                      ( \case
-                          (Arr xt yt, xt')
-                            | xt == xt' -> pure yt
-                            | xt == UnclearType -> Unclear
-                            | xt' == UnclearType -> Unclear
-                            | otherwise -> Err
-                          -- this case being when xt and xt' are both clear but still different
-                          -- which will always result in a type error
-                          (UnclearType, _) -> Unclear
-                          (_, _) -> Err
-                          -- f type is clear and not a function
-                          -- must be a type error
+                f <- f'
+                x <- x'
+                return $
+                  illegalJoin $
+                    liftA2
+                      ( curry
+                          ( \case
+                              (Arr xt yt, xt')
+                                | xt == xt' -> pure yt
+                                | xt == UnclearType -> Unclear
+                                | xt' == UnclearType -> Unclear
+                                | otherwise -> Err
+                              -- this case being when xt and xt' are both clear but still different
+                              -- which will always result in a type error
+                              (UnclearType, _) -> Unclear
+                              (_, _) -> Err
+                              -- f type is clear and not a function
+                              -- must be a type error
+                          )
                       )
-                  )
-                  f
-                  x
+                      f
+                      x
         Force _ (Delay _ term) -> rec term
-        Force _ t -> rec t <&> \case 
-          Success (Delayed t') -> Success t' 
-          Success UnclearType -> Unclear
-          Success _ -> Err
-          r -> r
-        Delay _ t -> rec t <&> \case 
-          Success t' -> Success (Delayed t')
-          _ -> Success UnclearType 
-          -- I think this is correct 
-          -- with the way Force Delayed is handled 
-          -- but there should probably be a DellayErr type to make this stronger
-        Constant _ c -> return $ Success $
-          case c of
-            Default.Some (Default.ValueOf Default.DefaultUniInteger _) -> Integer
-            Default.Some (Default.ValueOf Default.DefaultUniString _) -> String
-            Default.Some (Default.ValueOf Default.DefaultUniByteString _) -> ByteString
-            Default.Some (Default.ValueOf Default.DefaultUniUnit _) -> Unit
-            Default.Some (Default.ValueOf Default.DefaultUniBool _) -> Bool
-            Default.Some (Default.ValueOf Default.DefaultUniData _) -> Data
-            _ -> UnclearType
+        Force _ t ->
+          rec t <&> \case
+            Success (Delayed t') -> Success t'
+            Success UnclearType -> Unclear
+            Success _ -> Err
+            r -> r
+        Delay _ t ->
+          rec t <&> \case
+            Success t' -> Success (Delayed t')
+            _ -> Success UnclearType
+        -- I think this is correct
+        -- with the way Force Delayed is handled
+        -- but there should probably be a DellayErr type to make this stronger
+        Constant _ c -> return $
+          Success $
+            case c of
+              Default.Some (Default.ValueOf Default.DefaultUniInteger _) -> Integer
+              Default.Some (Default.ValueOf Default.DefaultUniString _) -> String
+              Default.Some (Default.ValueOf Default.DefaultUniByteString _) -> ByteString
+              Default.Some (Default.ValueOf Default.DefaultUniUnit _) -> Unit
+              Default.Some (Default.ValueOf Default.DefaultUniBool _) -> Bool
+              Default.Some (Default.ValueOf Default.DefaultUniData _) -> Data
+              _ -> UnclearType
         Builtin _ b ->
-          return $ Success $
-            let bin x = x --> x --> x
-                binInt = bin Integer
-                comp x = x --> x --> Bool
-                compInts = comp Integer
-                compBS = comp ByteString
-             in case b of
-                  Default.AddInteger -> binInt
-                  Default.SubtractInteger -> binInt
-                  Default.MultiplyInteger -> binInt
-                  Default.EqualsInteger -> compInts
-                  Default.LessThanInteger -> compInts
-                  Default.LessThanEqualsInteger -> compInts
-                  Default.AppendByteString -> bin ByteString
-                  Default.ConsByteString -> Integer --> ByteString --> ByteString
-                  Default.EqualsByteString -> compBS
-                  Default.LessThanByteString -> compBS
-                  Default.LessThanEqualsByteString -> compBS
-                  Default.VerifySignature -> ByteString --> ByteString --> ByteString --> String
-                  Default.AppendString -> bin String
-                  Default.EqualsString -> comp String
-                  Default.ConstrData -> Integer --> List Data --> Data
-                  Default.EqualsData -> comp Data
-                  _ -> UnclearType
+          return $
+            Success $
+              let bin x = x --> x --> x
+                  binInt = bin Integer
+                  comp x = x --> x --> Bool
+                  compInts = comp Integer
+                  compBS = comp ByteString
+               in case b of
+                    Default.AddInteger -> binInt
+                    Default.SubtractInteger -> binInt
+                    Default.MultiplyInteger -> binInt
+                    Default.EqualsInteger -> compInts
+                    Default.LessThanInteger -> compInts
+                    Default.LessThanEqualsInteger -> compInts
+                    Default.AppendByteString -> bin ByteString
+                    Default.ConsByteString -> Integer --> ByteString --> ByteString
+                    Default.EqualsByteString -> compBS
+                    Default.LessThanByteString -> compBS
+                    Default.LessThanEqualsByteString -> compBS
+                    Default.VerifySignature -> ByteString --> ByteString --> ByteString --> String
+                    Default.AppendString -> bin String
+                    Default.EqualsString -> comp String
+                    Default.ConstrData -> Integer --> List Data --> Data
+                    Default.EqualsData -> comp Data
+                    _ -> UnclearType
         Error {} -> return Err
 
 -- this would be illegal to implement as join
@@ -331,7 +336,7 @@ withTemplate templateName (template, holes) = completeRecM $ \target -> do
   sepMaybe $ do
     mapArgs <- lift . lift $ margs
     let args = M.elems mapArgs
-    guard . and =<< mapM succeds args 
+    guard . and =<< mapM succeds args
     return $ applyArgs (Var () templateName) args
 
 findHoles :: [Name] -> NTerm -> NTerm -> ScopeM (Maybe (Map Name NTerm))

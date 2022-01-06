@@ -2,7 +2,7 @@ module Shrink.Tactics.Safe (
   safeTactList,
 ) where
 
-import Shrink.Tactics.Util (completeSafeTactic, completeRec, isData, mentions, subName', whnf, sepMaybe)
+import Shrink.Tactics.Util (completeRec, completeSafeTactic, isData, mentions, sepMaybe, subName', whnf)
 import Shrink.Types (SafeTactic, WhnfRes (Err, Success, Unclear))
 
 import Control.Monad (guard)
@@ -43,7 +43,7 @@ removeDeadCode = completeSafeTactic $ \case
     return $ Just $ subName' name name' term
   -- subName' is used because name colision is intended in this case
   (Apply _ (LamAbs _ name term) val) ->
-    whnf val <&> \case 
+    whnf val <&> \case
       Success () ->
         if mentions name term
           then Nothing
@@ -63,6 +63,7 @@ cleanForceDelay = completeRec $ \case
 promoteErrors :: SafeTactic
 promoteErrors = completeSafeTactic $ \case
   Error () -> return Nothing
-  t -> whnf t <&> \case
-    Err -> Just $ Error ()
-    _ -> Nothing
+  t ->
+    whnf t <&> \case
+      Err -> Just $ Error ()
+      _ -> Nothing
