@@ -1,3 +1,6 @@
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
+{-# OPTIONS_GHC -Wno-unused-matches #-}
 module Shrink.Tactics.Util (
   completeTactic,
   applyArgs,
@@ -131,38 +134,40 @@ whnfT = whnf' 100
 
 whnf' :: MonadScope m => Integer -> NTerm -> m (WhnfRes SimpleType)
 whnf' 0 = const $ return Unclear
-whnf' n =
+whnf' n = 
   let rec = whnf' (n -1)
    in \case
         Var _ name -> do
           scope <- ask
           case M.lookup name scope of
             Just val -> rec val
-            Nothing -> return $ Success UnclearType
-        -- TODO: add polymorphism to
-        -- simple types so lambdas can be typed
-        LamAbs {} -> return $ Success UnclearType
-        Apply _ (LamAbs _ name lTerm) valTerm -> liftM2 (*>) (rec valTerm) (rec $ appBind name valTerm lTerm)
-        Apply _ fTerm xTerm ->
-          let f' = rec fTerm
-              x' = rec xTerm
-           in do
-                f <- f'
-                x <- x'
+            Nothing -> return $ Success (TVar name)
+        LamAbs _ name term -> pure . Arr (TVar name) <$> rec term
+          -- pure Unclear 
+          -- fmap (Arr (TVar name)) <$> rec term
+        Apply _ (LamAbs _ name lTerm) valTerm -> 
+          liftM2 (*>) 
+            (rec valTerm) 
+            (rec $ appBind name valTerm lTerm)
+        Apply _ fTerm xTerm -> do
+                f <- rec fTerm
+                x <- rec xTerm
                 return $
                   illegalJoin $
                     liftA2
                       ( curry
                           ( \case
-                              (Arr xt yt, xt')
-                                | xt == xt' -> pure yt
-                                | xt == UnclearType -> Unclear
-                                | xt' == UnclearType -> Unclear
+                              (Arr (TVar n) yt,xt) -> typeSub n xt yt 
+                              (Arr xt yt, xt') 
+                                | xt == xt' -> yt
+                                | isUnclear xt -> Unclear
+                                | isUnclear xt' -> Unclear
                                 | otherwise -> Err
                               -- this case being when xt and xt' are both clear but still different
                               -- which will always result in a type error
-                              (UnclearType, _) -> Unclear
-                              (_, _) -> Err
+                              (f,_)
+                                | isUnclear f -> Unclear
+                                | otherwise -> Err
                               -- f type is clear and not a function
                               -- must be a type error
                           )
@@ -172,17 +177,11 @@ whnf' n =
         Force _ (Delay _ term) -> rec term
         Force _ t ->
           rec t <&> \case
-            Success (Delayed t') -> Success t'
+            Success (Delayed t') -> t'
             Success UnclearType -> Unclear
             Success _ -> Err
             r -> r
-        Delay _ t ->
-          rec t <&> \case
-            Success t' -> Success (Delayed t')
-            _ -> Success UnclearType
-        -- I think this is correct
-        -- with the way Force Delayed is handled
-        -- but there should probably be a DellayErr type to make this stronger
+        Delay _ t -> pure . Delayed <$> rec t
         Constant _ c -> return $
           Success $
             case c of
@@ -220,6 +219,32 @@ whnf' n =
                     Default.EqualsData -> comp Data
                     _ -> UnclearType
         Error {} -> return Err
+
+isUnclear :: SimpleType -> Bool
+isUnclear UnclearType = True
+isUnclear (TVar _) = True
+isUnclear _ = False
+
+typeSub :: Name -> SimpleType -> WhnfRes SimpleType -> WhnfRes SimpleType
+typeSub name sub = let
+  rec = typeSub name sub in 
+    \case
+      Err -> Err
+      Unclear -> Unclear
+      Success t -> 
+        case t of
+          Arr (TVar name') r
+            | name == name' -> pure $ Arr (TVar name') r
+            | otherwise -> pure $ Arr (TVar name') (rec r)
+          Arr l r -> (Arr <$> rec (pure l)) <&> ($ rec r)
+          List t -> List <$> rec (pure t)
+          Delayed t -> pure $ Delayed (rec t)
+          TVar name'
+            | name == name' -> pure sub
+            | otherwise -> pure $ TVar name'
+          t -> pure t
+            
+
 
 -- this would be illegal to implement as join
 -- because it doesn't (and I think can't)

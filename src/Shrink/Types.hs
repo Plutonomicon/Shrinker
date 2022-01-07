@@ -1,4 +1,5 @@
-module Shrink.Types (
+module Shrink.Types
+(
   DTerm,
   NTerm,
   DProgram,
@@ -88,14 +89,18 @@ data SimpleType
   | Data
   | Unit
   | Bool
-  | Arr SimpleType SimpleType
+  | Arr SimpleType (WhnfRes SimpleType)
   | List SimpleType
-  | Delayed SimpleType
+  | Delayed (WhnfRes SimpleType)
+  | TVar Name
+    -- Success TErr is somewhat nonsensical
+    -- but it's usefull to be able to represent 
+    -- Delays and lambdas which contain errors
   deriving (Eq, Ord)
 
 infixr 9 -->
 (-->) :: SimpleType -> SimpleType -> SimpleType
-(-->) = Arr
+(-->) a = Arr a . pure
 
 class (MonadReader Scope m, MonadState Integer m) => MonadScope m
 

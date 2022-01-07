@@ -1,0 +1,7 @@
+let
+	double = (\x -> x *i 2);
+	two = double 1;
+	four = double two
+in
+	two
+	
