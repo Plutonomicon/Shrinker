@@ -9,6 +9,13 @@ limitations under the License.
 # This project is Currently unmaintained
 
 [#Shrinker](#Shrinker)
+[![Hercules-ci][Herc badge]][Herc link]
+[![Cachix Cache][Cachix badge]][Cachix link]
+
+[Herc badge]: https://img.shields.io/badge/ci--by--hercules-green.svg
+[Herc link]: https://hercules-ci.com/github/Plutonomicon/Shrinker
+[Cachix badge]: https://img.shields.io/badge/cachix-public_plutonomicon-blue.svg
+[Cachix link]: https://public-plutonomicon.cachix.org
 This project contains tools for shrinking plutus scripts.
 
 ## Using Shrinker
